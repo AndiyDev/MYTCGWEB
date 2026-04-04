@@ -35,9 +35,9 @@
 - [ ] Delete post (owner only)
 
 ## Phase 5 — Room
-- [ ] Room layout storage
-- [ ] Display stand + shelves rendering
-- [ ] Public profile view
+- [x] Room layout storage
+- [x] Display stand + shelves rendering
+- [x] Public profile view
 
 ## Phase 6 — Polish
 - [ ] Full UI theme

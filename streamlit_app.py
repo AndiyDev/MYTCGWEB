@@ -13,6 +13,7 @@ from lib.collection import (
     get_set_progress,
 )
 from lib.pokemon_import import fetch_pokemon_card
+from lib.room import get_room_items, get_available_items, place_item, clear_slot, get_user_by_username
 
 st.set_page_config(page_title="MYTCGWEB", layout="wide")
 
@@ -154,6 +155,64 @@ def collection_view(user):
                 st.rerun()
 
 
+def render_room_grid(items_by_slot, slots, title):
+    st.markdown(f"### {title}")
+    cols = st.columns(len(slots))
+    for idx, slot in enumerate(slots):
+        with cols[idx]:
+            item = items_by_slot.get(slot)
+            if item:
+                st.image(item["image_url"], use_column_width=True)
+                st.caption(f"{item['name']} #{item['card_number']}")
+            else:
+                st.markdown("<div style='height:120px; border:1px dashed #333; border-radius:8px;'></div>", unsafe_allow_html=True)
+            st.caption(f"Slot {slot}")
+
+
+def room_view(user):
+    st.markdown("## Mitt Rum")
+    tabs = st.tabs(["Min room", "Profilvy"])
+    with tabs[0]:
+        available = get_available_items(engine, user["id"])
+        room_items = get_room_items(engine, user["id"], public_only=False)
+        items_by_slot = {f"{r['slot_type']}-{r['x_pos']}-{r['y_pos']}": r for r in room_items}
+
+        st.markdown("### Placera kort")
+        item_options = {f"{row['name']} #{row['card_number']}": row["item_id"] for row in available}
+        slot_type = st.selectbox("Möbel", ["Wall-Left", "Wall-Right", "Center-Stand"])
+        x_pos = st.number_input("X", value=1)
+        y_pos = st.number_input("Y", value=1)
+        selected_item = st.selectbox("Kort", ["--" ] + list(item_options.keys()))
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Placera") and selected_item != "--":
+                place_item(engine, user["id"], item_options[selected_item], slot_type, x_pos, y_pos)
+                st.rerun()
+        with col2:
+            if st.button("Ta bort från slot"):
+                clear_slot(engine, user["id"], slot_type, x_pos, y_pos)
+                st.rerun()
+
+        render_room_grid(items_by_slot, ["Wall-Left-1-1", "Wall-Left-2-1", "Wall-Left-3-1"], "Vänster vägg")
+        render_room_grid(items_by_slot, ["Center-Stand-1-1", "Center-Stand-2-1", "Center-Stand-3-1"], "Ställ i mitten")
+        render_room_grid(items_by_slot, ["Wall-Right-1-1", "Wall-Right-2-1", "Wall-Right-3-1"], "Höger vägg")
+
+    with tabs[1]:
+        st.markdown("### Publik profil")
+        username = st.text_input("Användarnamn")
+        if st.button("Visa profil") and username:
+            user_row = get_user_by_username(engine, username)
+            if not user_row:
+                st.error("Ingen användare hittades")
+            else:
+                public_items = get_room_items(engine, user_row["id"], public_only=True)
+                items_by_slot = {f"{r['slot_type']}-{r['x_pos']}-{r['y_pos']}": r for r in public_items}
+                render_room_grid(items_by_slot, ["Wall-Left-1-1", "Wall-Left-2-1", "Wall-Left-3-1"], "Vänster vägg")
+                render_room_grid(items_by_slot, ["Center-Stand-1-1", "Center-Stand-2-1", "Center-Stand-3-1"], "Ställ i mitten")
+                render_room_grid(items_by_slot, ["Wall-Right-1-1", "Wall-Right-2-1", "Wall-Right-3-1"], "Höger vägg")
+
+
 def market_view():
     st.markdown("## Marknad")
     st.info("Marknaden byggs nu. Här kommer sälj/köp/byte med soft-lockade kort.")
@@ -162,11 +221,6 @@ def market_view():
 def groups_view():
     st.markdown("## Social Hubb")
     st.info("Gruppflöde och chatt byggs nu. Vi behåller flödet men gör det redo för Streamlit.")
-
-
-def room_view():
-    st.markdown("## Mitt Rum")
-    st.info("Rummet byggs om i Streamlit. Fokus: riktig 3D-känsla och möblering.")
 
 
 def admin_view(user):
