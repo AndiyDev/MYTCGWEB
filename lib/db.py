@@ -1,10 +1,18 @@
 import os
-import streamlit as st
+try:
+    import streamlit as st
+except Exception:  # pragma: no cover - used in CLI context
+    st = None
 from sqlalchemy import create_engine
 
 
 def _build_mysql_url():
-    cfg = st.secrets.get("db", {})
+    cfg = {}
+    if st is not None:
+        try:
+            cfg = st.secrets.get("db", {})
+        except Exception:
+            cfg = {}
     host = cfg.get("host", os.getenv("DB_HOST"))
     port = cfg.get("port", os.getenv("DB_PORT", "3306"))
     name = cfg.get("name", os.getenv("DB_NAME"))
