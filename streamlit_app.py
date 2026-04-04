@@ -16,6 +16,7 @@ from lib.pokemon_import import fetch_pokemon_card
 from lib.pokemon_api import fetch_sets, fetch_cards_page
 from lib.import_pokemon import upsert_sets, upsert_cards
 from lib.pokemon_com import import_set_from_pokemon_com
+from lib.pricing import scrape_source
 from lib.room import get_room_items, get_available_items, place_item, clear_slot, get_user_by_username
 from lib.groups import list_groups, create_group, join_group, is_member, list_posts, create_post, delete_post
 from lib.market import (
@@ -150,6 +151,11 @@ def cached_cards(set_id: str):
 @st.cache_data(ttl=20, show_spinner=False)
 def cached_progress(user_id: str, game: str):
     return get_set_progress(engine, user_id, game)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def cached_price(source: str, query: str):
+    return scrape_source(source, query)
 
 
 def login_view():
@@ -340,6 +346,33 @@ def collection_view(user):
                 "<div class='chart'><div class='chart-line'></div></div>",
                 unsafe_allow_html=True,
             )
+            st.divider()
+            st.markdown("### Pris-sökning")
+            sources = st.multiselect(
+                "Källor",
+                ["Cardmarket", "TCGPlayer", "Tradera", "Blocket", "Vinted", "eBay"],
+                default=["Cardmarket", "TCGPlayer"],
+            )
+            query = st.text_input("Sökterm", value=f"{card['name']} {selected_set.get('set_name','')} {card['card_number']}")
+            if st.button("Hämta pris"):
+                st.session_state["price_results"] = {}
+                for src in sources:
+                    result = cached_price(src, query)
+                    st.session_state["price_results"][src] = result
+
+            results = st.session_state.get("price_results", {})
+            for src in sources:
+                result = results.get(src)
+                if not result:
+                    continue
+                if result.get("error"):
+                    st.caption(f"{src}: kunde inte läsa priser ({result['error']}).")
+                else:
+                    st.markdown(
+                        f"**{src}** • Low: {result['low']:.2f} • Median: {result['median']:.2f} • High: {result['high']:.2f}"
+                    )
+                    if result.get("url"):
+                        st.caption(result["url"])
             st.markdown("<div class='pill-row'>", unsafe_allow_html=True)
             st.markdown(f"<span class='badge'>{card['variant']}</span>", unsafe_allow_html=True)
             st.markdown(f"<span class='badge'>Äger {str(card['count']).zfill(2)}</span>", unsafe_allow_html=True)
