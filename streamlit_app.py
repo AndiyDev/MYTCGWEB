@@ -97,10 +97,22 @@ input, textarea, select { border-radius: 10px !important; }
   padding: 12px;
   box-shadow: 0 12px 28px rgba(0,0,0,0.35);
 }
+.card-item .card-img {
+  background: #0d0d12;
+  border: 1px solid #232332;
+  border-radius: 14px;
+  padding: 8px;
+  margin-bottom: 10px;
+}
 .card-item .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
 .card-item .meta { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
 .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--stroke); font-size: 0.75rem; color: var(--muted); }
 .value { font-weight: 700; font-size: 1.15rem; }
+
+.detail-card { background: #111118; border: 1px solid var(--stroke); border-radius: 18px; padding: 16px; }
+.detail-title { font-size: 1.25rem; font-weight: 700; margin-top: 8px; }
+.detail-sub { color: var(--muted); margin-top: 2px; }
+.pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -179,7 +191,7 @@ def render_set_tile(set_row, owned: int, total: int):
 def render_card_image(url: str, dim: bool):
     if dim:
         st.markdown(
-            f"<img src='{url}' style='width:100%; opacity:0.4; border-radius:6px;'/>",
+            f"<img src='{url}' style='width:100%; opacity:0.4; border-radius:10px;'/>",
             unsafe_allow_html=True,
         )
     else:
@@ -196,6 +208,7 @@ def collection_view(user):
         return
 
     progress = cached_progress(user["id"], game)
+    set_map = {s["id"]: s for s in sets}
 
     if st.session_state.get("selected_set_id"):
         if st.button("Tillbaka till set"):
@@ -220,7 +233,9 @@ def collection_view(user):
     counts = get_user_variant_counts(engine, user["id"], selected_set_id)
 
     st.markdown("### Kort i set")
+    selected_set = set_map.get(selected_set_id, {})
     search = st.text_input("Sök kort (namn eller nummer)")
+    filter_variants = st.multiselect("Filter", ["Normal", "Holofoil", "Reverse Holo"], default=["Normal", "Holofoil", "Reverse Holo"])
     if search:
         needle = search.strip().lower()
         cards = [
@@ -244,12 +259,16 @@ def collection_view(user):
         for variant in variants:
             count = counts.get(card["id"], {}).get(variant, 0)
             dim = count == 0
+            if variant not in filter_variants:
+                continue
             st.markdown("<div class='card-item'>", unsafe_allow_html=True)
             st.markdown(f"<div class='name'>#{card['card_number']} {card['name']}</div>", unsafe_allow_html=True)
             if card["image_url"]:
+                st.markdown("<div class='card-img'>", unsafe_allow_html=True)
                 render_card_image(card["image_url"], dim)
+                st.markdown("</div>", unsafe_allow_html=True)
             st.markdown(
-                f"<div class='meta'>{variant} • <span class='value'>{str(count).zfill(2)}</span></div>",
+                f"<div class='meta'>{selected_set.get('set_name','')} • {variant} • <span class='value'>{str(count).zfill(2)}</span></div>",
                 unsafe_allow_html=True,
             )
             cols = st.columns(3)
@@ -275,13 +294,20 @@ def collection_view(user):
 
     if st.session_state.get("open_card"):
         card = st.session_state["open_card"]
-        with st.dialog(f"{card['name']} • {card['variant']}"):
+        with st.dialog(f"{card['name']}"):
+            st.markdown("<div class='detail-card'>", unsafe_allow_html=True)
             if card.get("image_url"):
                 st.image(card["image_url"], use_column_width=True)
-            st.write(f"Nummer: {card['card_number']}")
-            st.write(f"Rarity: {card.get('rarity')}")
-            st.write(f"Variant: {card['variant']}")
-            st.write(f"Äger: {str(card['count']).zfill(2)}")
+            st.markdown(f"<div class='detail-title'>{card['name']}</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='detail-sub'>{selected_set.get('set_name','')} • {card.get('rarity') or '—'} • #{card['card_number']}</div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown("<div class='pill-row'>", unsafe_allow_html=True)
+            st.markdown(f"<span class='badge'>{card['variant']}</span>", unsafe_allow_html=True)
+            st.markdown(f"<span class='badge'>Äger {str(card['count']).zfill(2)}</span>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
             if st.button("Stäng"):
                 st.session_state.pop("open_card")
                 st.rerun()
