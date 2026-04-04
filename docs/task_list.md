@@ -4,14 +4,14 @@
 - [x] Create Streamlit entrypoint (`streamlit_app.py`)
 - [x] Add requirements
 - [x] Add DB helpers + schema initializer
-- [ ] Add Streamlit secrets template
-- [ ] Add deploy notes for Streamlit Cloud
+- [x] Add Streamlit secrets template
+- [x] Add deploy notes for Streamlit Cloud
 
 ## Phase 1 — Auth + Security
 - [x] Login/register with bcrypt
-- [ ] Session timeout + basic audit log
-- [ ] Role gating for admin import
-- [ ] Rate limit login attempts
+- [x] Session timeout + basic audit log
+- [x] Role gating for admin import
+- [x] Rate limit login attempts
 
 ## Phase 2 — Collection
 - [x] Set and card schema

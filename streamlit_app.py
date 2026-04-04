@@ -2,7 +2,7 @@ import uuid
 import streamlit as st
 from lib.db import get_engine
 from lib.schema import init_schema
-from lib.auth import login_user, register_user, logout_user, get_current_user
+from lib.auth import login_user, register_user, logout_user, get_current_user, require_admin
 from lib.collection import get_sets, get_cards_for_set, get_user_variant_counts, add_instance, remove_instance
 
 st.set_page_config(page_title="MYTCGWEB", layout="wide")
@@ -22,8 +22,10 @@ def login_view():
         username = st.text_input("Användarnamn")
         password = st.text_input("Lösenord", type="password")
         if st.button("Logga in", use_container_width=True):
-            user = login_user(engine, username, password)
-            if not user:
+            user, error = login_user(engine, username, password)
+            if error == "locked":
+                st.error("Kontot är låst. Försök igen senare.")
+            elif not user:
                 st.error("Fel användarnamn eller lösenord")
             else:
                 st.success("Inloggad")
@@ -86,11 +88,13 @@ def collection_view(user):
                 cols = st.columns(2)
                 with cols[0]:
                     if st.button("-", key=f"rem-{card['id']}-{variant}"):
-                        remove_instance(engine, user["id"], card["id"], variant)
+                        if not remove_instance(engine, user["id"], card["id"], variant):
+                            st.warning("Kortet är låst eller saknas.")
                         st.rerun()
                 with cols[1]:
                     if st.button("+", key=f"add-{card['id']}-{variant}"):
-                        add_instance(engine, user["id"], card["id"], variant, "Near Mint")
+                        if not add_instance(engine, user["id"], card["id"], variant, "Near Mint"):
+                            st.warning("Den varianten finns inte.")
                         st.rerun()
 
 
@@ -109,8 +113,12 @@ def room_view():
     st.info("Rummet byggs om i Streamlit. Fokus: riktig 3D-känsla och möblering.")
 
 
-def admin_view():
+def admin_view(user):
     st.markdown("## Admin / Import")
+    if not require_admin(user):
+        st.error("Du saknar behörighet.")
+        return
+
     st.markdown("Här lägger du till set och kort tills automatiska importer är klara.")
 
     with st.form("add_set"):
@@ -127,10 +135,12 @@ def admin_view():
             import sqlalchemy as sa
             with engine.begin() as conn:
                 conn.execute(
-                    sa.text("""
+                    sa.text(
+                        """
                         INSERT INTO tcg_sets (id, game, series, set_name, set_code, total_cards, logo_path, symbol_path)
                         VALUES (:id, :g, :s, :n, :c, :t, :l, :sym)
-                    """),
+                        """
+                    ),
                     {
                         "id": str(uuid.uuid4()),
                         "g": game,
@@ -159,10 +169,12 @@ def admin_view():
             import sqlalchemy as sa
             with engine.begin() as conn:
                 conn.execute(
-                    sa.text("""
+                    sa.text(
+                        """
                         INSERT INTO tcg_cards (id, set_id, card_number, name, rarity, image_url, has_normal, has_holofoil, has_reverse_holo)
                         VALUES (:id, :sid, :num, :name, :rar, :img, :hn, :hh, :hr)
-                    """),
+                        """
+                    ),
                     {
                         "id": str(uuid.uuid4()),
                         "sid": set_id,
@@ -191,7 +203,11 @@ def main():
         if st.button("Logga ut"):
             logout_user()
             st.rerun()
-        page = st.radio("Navigering", ["Samling", "Marknad", "Social Hubb", "Mitt Rum", "Admin"])
+
+        pages = ["Samling", "Marknad", "Social Hubb", "Mitt Rum"]
+        if require_admin(user):
+            pages.append("Admin")
+        page = st.radio("Navigering", pages)
 
     if page == "Samling":
         collection_view(user)
@@ -202,7 +218,7 @@ def main():
     elif page == "Mitt Rum":
         room_view()
     elif page == "Admin":
-        admin_view()
+        admin_view(user)
 
 
 if __name__ == "__main__":
