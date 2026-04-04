@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import text
 
 
@@ -88,14 +89,16 @@ def create_post(engine, group_id: str, author_id: str, category: str, content: s
             if row["locked_by_post_id"] or row["locked_by_listing_id"]:
                 return "locked"
 
+        post_id = str(uuid.uuid4())
         conn.execute(
             text(
                 """
                 INSERT INTO group_posts (id, group_id, author_id, category, trade_type, offered_item_id, requested_card_id, content, status)
-                VALUES (UUID(), :g, :a, :c, :t, :o, :r, :content, 'OPEN')
+                VALUES (:id, :g, :a, :c, :t, :o, :r, :content, 'OPEN')
                 """
             ),
             {
+                "id": post_id,
                 "g": group_id,
                 "a": author_id,
                 "c": category,
@@ -107,8 +110,8 @@ def create_post(engine, group_id: str, author_id: str, category: str, content: s
         )
         if offered_item_id:
             conn.execute(
-                text("UPDATE card_instances SET locked_by_post_id = LAST_INSERT_ID() WHERE id=:id"),
-                {"id": offered_item_id},
+                text("UPDATE card_instances SET locked_by_post_id = :pid WHERE id=:id"),
+                {"id": offered_item_id, "pid": post_id},
             )
     return None
 

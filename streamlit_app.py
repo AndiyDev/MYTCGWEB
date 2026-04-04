@@ -73,10 +73,16 @@ def login_view():
         new_username = st.text_input("Nytt användarnamn")
         new_password = st.text_input("Nytt lösenord", type="password")
         display_name = st.text_input("Visningsnamn (valfritt)")
+        st.caption("Användarnamn 3-24 tecken: a-z, 0-9, . _ -")
+        st.caption("Lösenord minst 8 tecken")
         if st.button("Skapa konto", use_container_width=True):
-            created = register_user(engine, new_username, new_password, display_name or None)
-            if not created:
+            user_id, error = register_user(engine, new_username, new_password, display_name or None)
+            if error == "exists":
                 st.error("Användarnamnet är upptaget")
+            elif error == "invalid_username":
+                st.error("Ogiltigt användarnamn")
+            elif error == "weak_password":
+                st.error("Lösenordet är för kort")
             else:
                 st.success("Konto skapat. Logga in.")
 

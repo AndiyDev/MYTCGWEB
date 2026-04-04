@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import text
 
 
@@ -40,18 +41,19 @@ def create_listing(engine, seller_id: str, item_id: str, price: float, currency:
         if row["locked_by_listing_id"] or row["locked_by_post_id"]:
             return "locked"
 
+        listing_id = str(uuid.uuid4())
         conn.execute(
             text(
                 """
                 INSERT INTO listings (id, item_id, seller_id, price, currency, notes, status)
-                VALUES (UUID(), :item, :seller, :price, :currency, :notes, 'ACTIVE')
+                VALUES (:id, :item, :seller, :price, :currency, :notes, 'ACTIVE')
                 """
             ),
-            {"item": item_id, "seller": seller_id, "price": price, "currency": currency, "notes": notes},
+            {"id": listing_id, "item": item_id, "seller": seller_id, "price": price, "currency": currency, "notes": notes},
         )
         conn.execute(
-            text("UPDATE card_instances SET locked_by_listing_id = LAST_INSERT_ID() WHERE id=:id"),
-            {"id": item_id},
+            text("UPDATE card_instances SET locked_by_listing_id = :lid WHERE id=:id"),
+            {"id": item_id, "lid": listing_id},
         )
     return None
 

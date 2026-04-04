@@ -1,5 +1,5 @@
+import re
 import uuid
-from datetime import timedelta
 from passlib.context import CryptContext
 from sqlalchemy import text
 import streamlit as st
@@ -9,6 +9,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 LOCKOUT_THRESHOLD = 5
 LOCKOUT_MINUTES = 15
+USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9_.-]{3,24}$")
+MIN_PASSWORD_LEN = 8
 
 
 def hash_password(password: str) -> str:
@@ -48,7 +50,8 @@ def login_user(engine, username: str, password: str):
             log_event(engine, None, "login_failed", f"user={username}")
             return None, "invalid"
 
-        if row["locked_until"] and row["locked_until"] > conn.execute(text("SELECT NOW()")):
+        now_value = conn.execute(text("SELECT NOW()")).scalar()
+        if row["locked_until"] and row["locked_until"] > now_value:
             log_event(engine, row["id"], "login_locked", None)
             return None, "locked"
 
@@ -56,7 +59,10 @@ def login_user(engine, username: str, password: str):
             attempts = (row["failed_login_attempts"] or 0) + 1
             lock_until = None
             if attempts >= LOCKOUT_THRESHOLD:
-                lock_until = conn.execute(text("SELECT DATE_ADD(NOW(), INTERVAL :m MINUTE)"), {"m": LOCKOUT_MINUTES}).scalar()
+                lock_until = conn.execute(
+                    text("SELECT DATE_ADD(NOW(), INTERVAL :m MINUTE)"),
+                    {"m": LOCKOUT_MINUTES},
+                ).scalar()
             conn.execute(
                 text("UPDATE users SET failed_login_attempts=:a, locked_until=:l WHERE id=:id"),
                 {"a": attempts, "l": lock_until, "id": row["id"]},
@@ -82,7 +88,20 @@ def login_user(engine, username: str, password: str):
     return user, None
 
 
+def validate_username(username: str) -> bool:
+    return bool(USERNAME_PATTERN.match(username or ""))
+
+
+def validate_password(password: str) -> bool:
+    return password is not None and len(password) >= MIN_PASSWORD_LEN
+
+
 def register_user(engine, username: str, password: str, display_name: str | None = None):
+    if not validate_username(username):
+        return None, "invalid_username"
+    if not validate_password(password):
+        return None, "weak_password"
+
     user_id = str(uuid.uuid4())
     with engine.begin() as conn:
         exists = conn.execute(
@@ -90,7 +109,7 @@ def register_user(engine, username: str, password: str, display_name: str | None
             {"u": username},
         ).first()
         if exists:
-            return None
+            return None, "exists"
         conn.execute(
             text(
                 "INSERT INTO users (id, username, password_hash, display_name, role) "
@@ -99,7 +118,7 @@ def register_user(engine, username: str, password: str, display_name: str | None
             {"id": user_id, "u": username, "p": hash_password(password), "d": display_name},
         )
     log_event(engine, user_id, "register", None)
-    return user_id
+    return user_id, None
 
 
 def require_admin(user: dict | None) -> bool:
