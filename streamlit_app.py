@@ -13,6 +13,8 @@ from lib.collection import (
     get_set_progress,
 )
 from lib.pokemon_import import fetch_pokemon_card
+from lib.pokemon_api import fetch_sets, fetch_cards_page
+from lib.import_pokemon import upsert_sets, upsert_cards
 from lib.room import get_room_items, get_available_items, place_item, clear_slot, get_user_by_username
 from lib.groups import list_groups, create_group, join_group, is_member, list_posts, create_post, delete_post
 from lib.market import (
@@ -124,11 +126,11 @@ def login_view():
 def render_set_tile(set_row, owned: int, total: int):
     logo = set_row.get("logo_path") or ""
     symbol = set_row.get("symbol_path") or ""
-    if logo and os.path.exists(logo):
+    if logo and (logo.startswith("http") or os.path.exists(logo)):
         st.image(logo, use_column_width=True)
     else:
         st.markdown(f"**{set_row['set_name']}**")
-    if symbol and os.path.exists(symbol):
+    if symbol and (symbol.startswith("http") or os.path.exists(symbol)):
         st.image(symbol, width=32)
     st.caption(f"{str(owned).zfill(3)}/{str(total).zfill(3)}")
 
@@ -556,6 +558,33 @@ def admin_view(user):
                         },
                     )
                 st.success("Kort importerat")
+
+    st.divider()
+    st.subheader("Bulkimport från Pokémon TCG API")
+    st.caption("Importer sker i små batcher för att undvika timeouts på Streamlit Cloud.")
+    mode = st.selectbox("Typ", ["Importera set", "Importera kort (sida)", "Importera kort för set"])
+    if mode == "Importera set":
+        if st.button("Hämta och spara set"):
+            sets = fetch_sets()
+            count = upsert_sets(engine, sets)
+            st.success(f"Sparade {count} set.")
+    elif mode == "Importera kort (sida)":
+        page = st.number_input("Page", min_value=1, value=1, step=1)
+        page_size = st.number_input("Page size", min_value=10, max_value=250, value=250, step=10)
+        if st.button("Hämta sida"):
+            data = fetch_cards_page(int(page), int(page_size))
+            cards = data.get("data", [])
+            count = upsert_cards(engine, cards)
+            st.success(f"Sparade {count} kort.")
+    else:
+        set_id = st.text_input("Set ID (t.ex. swsh4)")
+        page = st.number_input("Page", min_value=1, value=1, step=1, key="set-page")
+        page_size = st.number_input("Page size", min_value=10, max_value=250, value=250, step=10, key="set-size")
+        if st.button("Hämta set-kort") and set_id:
+            data = fetch_cards_page(int(page), int(page_size), query=f"set.id:{set_id}")
+            cards = data.get("data", [])
+            count = upsert_cards(engine, cards)
+            st.success(f"Sparade {count} kort för {set_id}.")
 
 
 def main():
