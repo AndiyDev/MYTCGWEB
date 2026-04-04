@@ -159,6 +159,64 @@ FALLBACK_TABLES = {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) """ + TABLE_OPTIONS + """;
     """,
+    "group_members": """
+    CREATE TABLE IF NOT EXISTS group_members (
+        id CHAR(36) PRIMARY KEY,
+        group_id CHAR(36) NOT NULL,
+        user_id CHAR(36) NOT NULL,
+        role VARCHAR(16) DEFAULT 'MEMBER',
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_group_user (group_id, user_id)
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    "group_posts": """
+    CREATE TABLE IF NOT EXISTS group_posts (
+        id CHAR(36) PRIMARY KEY,
+        group_id CHAR(36) NOT NULL,
+        author_id CHAR(36) NOT NULL,
+        category VARCHAR(16) DEFAULT 'POST',
+        trade_type VARCHAR(16),
+        offered_item_id CHAR(36),
+        requested_card_id CHAR(36),
+        content TEXT,
+        status VARCHAR(16) DEFAULT 'OPEN',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    "listings": """
+    CREATE TABLE IF NOT EXISTS listings (
+        id CHAR(36) PRIMARY KEY,
+        item_id CHAR(36) NOT NULL,
+        seller_id CHAR(36) NOT NULL,
+        price DECIMAL(12,2),
+        currency VARCHAR(8) DEFAULT 'SEK',
+        notes TEXT,
+        status VARCHAR(16) DEFAULT 'DRAFT',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    "room_items": """
+    CREATE TABLE IF NOT EXISTS room_items (
+        id CHAR(36) PRIMARY KEY,
+        owner_id CHAR(36) NOT NULL,
+        item_id CHAR(36) NOT NULL,
+        slot_type VARCHAR(32),
+        x_pos FLOAT,
+        y_pos FLOAT,
+        rotation FLOAT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    "audit_logs": """
+    CREATE TABLE IF NOT EXISTS audit_logs (
+        id CHAR(36) PRIMARY KEY,
+        user_id CHAR(36),
+        action VARCHAR(64) NOT NULL,
+        meta_json TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_audit_user (user_id)
+    ) """ + TABLE_OPTIONS + """;
+    """,
 }
 
 
@@ -191,11 +249,12 @@ def init_schema(engine):
         for statement in DEPENDENT_TABLES:
             try:
                 conn.execute(text(statement))
-            except Exception as exc:
-                if "card_instances" in statement and "card_instances" in FALLBACK_TABLES:
-                    try:
-                        conn.execute(text(FALLBACK_TABLES["card_instances"]))
-                    except Exception:
-                        raise
-                else:
+            except Exception:
+                fallback_done = False
+                for table_name, fallback_sql in FALLBACK_TABLES.items():
+                    if table_name in statement:
+                        conn.execute(text(fallback_sql))
+                        fallback_done = True
+                        break
+                if not fallback_done:
                     raise
