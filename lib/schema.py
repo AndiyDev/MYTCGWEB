@@ -131,6 +131,55 @@ DEPENDENT_TABLES = [
     ) """ + TABLE_OPTIONS + """;
     """,
     """
+    CREATE TABLE IF NOT EXISTS sealed_products (
+        id VARCHAR(64) PRIMARY KEY,
+        game VARCHAR(32) NOT NULL,
+        type VARCHAR(32) NOT NULL,
+        set_id CHAR(36),
+        name VARCHAR(255) NOT NULL,
+        image_url TEXT,
+        cards_per_pack INT DEFAULT 10,
+        msrp DECIMAL(12,2),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS sealed_instances (
+        id CHAR(36) PRIMARY KEY,
+        owner_id CHAR(36) NOT NULL,
+        sealed_product_id VARCHAR(64) NOT NULL,
+        purchase_price DECIMAL(12,2) DEFAULT 0,
+        purchase_date DATE NULL,
+        state VARCHAR(16) DEFAULT 'SEALED',
+        opened_at TIMESTAMP NULL,
+        notes TEXT,
+        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS booster_openings (
+        id CHAR(36) PRIMARY KEY,
+        owner_id CHAR(36) NOT NULL,
+        sealed_instance_id CHAR(36) NOT NULL,
+        set_id CHAR(36),
+        opened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        total_spent DECIMAL(12,2) DEFAULT 0,
+        estimated_value DECIMAL(12,2) DEFAULT 0,
+        platform_fee_pct DECIMAL(5,2) DEFAULT 10,
+        net_value DECIMAL(12,2) DEFAULT 0,
+        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS booster_opening_cards (
+        id CHAR(36) PRIMARY KEY,
+        opening_id CHAR(36) NOT NULL,
+        card_id CHAR(36) NOT NULL,
+        variant VARCHAR(32) DEFAULT 'Normal',
+        market_value_snapshot DECIMAL(12,2) DEFAULT 0
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    """
     CREATE TABLE IF NOT EXISTS audit_logs (
         id CHAR(36) PRIMARY KEY,
         user_id CHAR(36),
@@ -207,6 +256,53 @@ FALLBACK_TABLES = {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) """ + TABLE_OPTIONS + """;
     """,
+    "sealed_products": """
+    CREATE TABLE IF NOT EXISTS sealed_products (
+        id VARCHAR(64) PRIMARY KEY,
+        game VARCHAR(32) NOT NULL,
+        type VARCHAR(32) NOT NULL,
+        set_id CHAR(36),
+        name VARCHAR(255) NOT NULL,
+        image_url TEXT,
+        cards_per_pack INT DEFAULT 10,
+        msrp DECIMAL(12,2),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    "sealed_instances": """
+    CREATE TABLE IF NOT EXISTS sealed_instances (
+        id CHAR(36) PRIMARY KEY,
+        owner_id CHAR(36) NOT NULL,
+        sealed_product_id VARCHAR(64) NOT NULL,
+        purchase_price DECIMAL(12,2) DEFAULT 0,
+        purchase_date DATE NULL,
+        state VARCHAR(16) DEFAULT 'SEALED',
+        opened_at TIMESTAMP NULL,
+        notes TEXT
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    "booster_openings": """
+    CREATE TABLE IF NOT EXISTS booster_openings (
+        id CHAR(36) PRIMARY KEY,
+        owner_id CHAR(36) NOT NULL,
+        sealed_instance_id CHAR(36) NOT NULL,
+        set_id CHAR(36),
+        opened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        total_spent DECIMAL(12,2) DEFAULT 0,
+        estimated_value DECIMAL(12,2) DEFAULT 0,
+        platform_fee_pct DECIMAL(5,2) DEFAULT 10,
+        net_value DECIMAL(12,2) DEFAULT 0
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    "booster_opening_cards": """
+    CREATE TABLE IF NOT EXISTS booster_opening_cards (
+        id CHAR(36) PRIMARY KEY,
+        opening_id CHAR(36) NOT NULL,
+        card_id CHAR(36) NOT NULL,
+        variant VARCHAR(32) DEFAULT 'Normal',
+        market_value_snapshot DECIMAL(12,2) DEFAULT 0
+    ) """ + TABLE_OPTIONS + """;
+    """,
     "audit_logs": """
     CREATE TABLE IF NOT EXISTS audit_logs (
         id CHAR(36) PRIMARY KEY,
@@ -238,6 +334,8 @@ ALTER_SQL = [
     "ALTER TABLE users ADD COLUMN failed_login_attempts INT DEFAULT 0",
     "ALTER TABLE users ADD COLUMN locked_until TIMESTAMP NULL",
     "ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP NULL",
+    "ALTER TABLE card_instances ADD COLUMN purchase_price DECIMAL(12,2) DEFAULT 0",
+    "ALTER TABLE card_instances ADD COLUMN purchase_date DATE NULL",
 ]
 
 

@@ -17,6 +17,14 @@ from lib.pokemon_api import fetch_sets, fetch_cards_page
 from lib.import_pokemon import upsert_sets, upsert_cards
 from lib.pokemon_com import import_set_from_pokemon_com
 from lib.pricing import scrape_source
+from lib.sealed import (
+    list_sealed_products,
+    create_sealed_product,
+    add_sealed_instance,
+    list_user_sealed,
+    open_booster,
+)
+from lib.sealed_scrape import scrape_featured_products
 from lib.room import get_room_items, get_available_items, place_item, clear_slot, get_user_by_username
 from lib.groups import list_groups, create_group, join_group, is_member, list_posts, create_post, delete_post
 from lib.market import (
@@ -599,6 +607,79 @@ def groups_view(user):
                         st.rerun()
 
 
+def sealed_view(user):
+    st.markdown("## Sealed")
+    tabs = st.tabs(["Produkter", "Mina Sealed", "Öppna Booster"])
+
+    with tabs[0]:
+        products = list_sealed_products(engine, "pokemon")
+        if not products:
+            empty_state("Inga sealed produkter ännu. Lägg till via Admin.")
+        for p in products:
+            st.markdown("<div class='card-item'>", unsafe_allow_html=True)
+            st.markdown(f"<div class='name'>{p['name']}</div>", unsafe_allow_html=True)
+            if p.get("image_url"):
+                st.markdown("<div class='card-img'>", unsafe_allow_html=True)
+                st.image(p["image_url"], use_column_width=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='meta'>{p['type']} • {p.get('set_id') or 'Set saknas'}</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    with tabs[1]:
+        st.markdown("### Lägg till sealed du äger")
+        products = list_sealed_products(engine, "pokemon")
+        options = {f"{p['name']} ({p['type']})": p["id"] for p in products}
+        prod = st.selectbox("Produkt", ["--"] + list(options.keys()))
+        price = st.number_input("Pris (SEK)", min_value=0.0, value=0.0, step=1.0)
+        pdate = st.date_input("Köpdatum", value=None)
+        notes = st.text_area("Anteckningar")
+        if st.button("Lägg till") and prod != "--":
+            add_sealed_instance(engine, user["id"], options[prod], price, pdate, notes or None)
+            st.success("Tillagd")
+
+        st.divider()
+        st.markdown("### Mina sealed")
+        owned = list_user_sealed(engine, user["id"])
+        if not owned:
+            st.caption("Inga sealed ännu.")
+        for item in owned:
+            st.markdown("<div class='card-item'>", unsafe_allow_html=True)
+            st.markdown(f"<div class='name'>{item['name']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='meta'>{item['type']} • {item['state']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='meta'>Pris: {item['purchase_price']}</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    with tabs[2]:
+        st.markdown("### Öppna booster (manual)")
+        owned = [i for i in list_user_sealed(engine, user["id"]) if i["state"] == "SEALED" and i["type"] == "BOOSTER_PACK"]
+        if not owned:
+            st.caption("Inga booster packs att öppna.")
+            return
+        options = {f"{i['name']} ({i['id']})": i["id"] for i in owned}
+        selected = st.selectbox("Välj booster", list(options.keys()))
+        numbers = st.text_input("Kortnummer (10 st, komma-separerat)", help="Ex: 12,7,4,25,36,41,9,1,55,60")
+        variants = st.text_input("Varianter (valfritt, 10 st)", help="Ex: Normal,Normal,Holofoil,...")
+        if st.button("Öppna booster") and numbers:
+            nums = [n.strip() for n in numbers.split(",") if n.strip()]
+            vars_list = [v.strip() for v in variants.split(",") if v.strip()] if variants else []
+            result = open_booster(engine, user["id"], options[selected], nums, vars_list)
+            if result == "ok":
+                st.success("Booster öppnad!")
+            else:
+                st.error(f"Fel: {result}")
+
+
+def budget_view(user):
+    st.markdown("## Budget")
+    with engine.begin() as conn:
+        spent_cards = conn.execute(text("SELECT SUM(purchase_price) FROM card_instances WHERE owner_id=:u"), {"u": user["id"]}).scalar() or 0
+        spent_sealed = conn.execute(text("SELECT SUM(purchase_price) FROM sealed_instances WHERE owner_id=:u"), {"u": user["id"]}).scalar() or 0
+    total_spent = float(spent_cards) + float(spent_sealed)
+    st.metric("Totalt spenderat", f"{total_spent:.2f} SEK")
+    st.metric("Kort", f"{float(spent_cards):.2f} SEK")
+    st.metric("Sealed", f"{float(spent_sealed):.2f} SEK")
+
+
 def admin_view(user):
     st.markdown("## Admin / Import")
     if not require_admin(user):
@@ -747,6 +828,27 @@ def admin_view(user):
         result = import_set_from_pokemon_com(engine, expansion, delay=delay)
         st.success(f"Hämtade {result['links']} länkar. Sparade {result['imported']} kort.")
 
+    st.divider()
+    st.subheader("Sealed produkter (admin)")
+    with st.form("add_sealed"):
+        pid = st.text_input("ID (unik)", help="t.ex. pkm_booster_pack_sv4")
+        name = st.text_input("Namn")
+        set_id = st.text_input("Set ID (valfritt)")
+        type_label = st.selectbox("Typ", ["BOOSTER_PACK", "BOOSTER_BOX", "ETB", "TINS"])
+        image_url = st.text_input("Bild URL")
+        cards_per_pack = st.number_input("Kort per pack", min_value=1, value=10, step=1)
+        msrp = st.number_input("MSRP", min_value=0.0, value=0.0, step=1.0)
+        submitted = st.form_submit_button("Spara sealed")
+        if submitted and pid and name:
+            create_sealed_product(engine, pid, "pokemon", type_label, set_id or None, name, image_url or None, int(cards_per_pack), msrp or None)
+            st.success("Sealed produkt sparad")
+
+    if st.button("Hämta featured products (scrape)"):
+        items = scrape_featured_products()
+        st.success(f"Hittade {len(items)} produkter (granska och spara manuellt).")
+        for item in items[:20]:
+            st.write(item["name"])
+
 
 def main():
     header()
@@ -767,7 +869,7 @@ def main():
 
         st.markdown("<div class='sidebar-card' style='margin-top:12px;'>", unsafe_allow_html=True)
         st.markdown("<div class='sidebar-title'>Navigering</div>", unsafe_allow_html=True)
-        pages = ["Samling", "Marknad", "Social Hubb", "Mitt Rum"]
+        pages = ["Samling", "Sealed", "Marknad", "Social Hubb", "Mitt Rum", "Budget"]
         if require_admin(user):
             pages.append("Admin")
         page = st.radio("Navigering", pages)
@@ -775,12 +877,16 @@ def main():
 
     if page == "Samling":
         collection_view(user)
+    elif page == "Sealed":
+        sealed_view(user)
     elif page == "Marknad":
         market_view(user)
     elif page == "Social Hubb":
         groups_view(user)
     elif page == "Mitt Rum":
         room_view(user)
+    elif page == "Budget":
+        budget_view(user)
     elif page == "Admin":
         admin_view(user)
 
