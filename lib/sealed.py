@@ -100,13 +100,13 @@ def open_booster(engine, owner_id: str, sealed_instance_id: str, card_numbers: l
             {"id": sealed_instance_id, "uid": owner_id},
         ).mappings().first()
         if not si or si["state"] != "SEALED":
-            return "not_available"
+            return "not_available", None
         set_id = si["set_id"]
         if not set_id:
-            return "missing_set"
+            return "missing_set", None
         cards_per_pack = int(si["cards_per_pack"] or 10)
         if len(card_numbers) != cards_per_pack:
-            return "count_mismatch"
+            return "count_mismatch", None
 
         opening_id = str(uuid.uuid4())
         conn.execute(
@@ -140,7 +140,7 @@ def open_booster(engine, owner_id: str, sealed_instance_id: str, card_numbers: l
                 {"sid": set_id, "num": num},
             ).mappings().first()
             if not card:
-                return f"missing_card:{num}"
+                return f"missing_card:{num}", None
             variant = variants[idx] if idx < len(variants) and variants[idx] else "Normal"
             conn.execute(
                 text(
@@ -166,4 +166,55 @@ def open_booster(engine, owner_id: str, sealed_instance_id: str, card_numbers: l
             {"id": sealed_instance_id},
         )
 
-    return "ok"
+    return "ok", opening_id
+
+
+def list_openings(engine, owner_id: str):
+    with engine.begin() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT bo.id, bo.opened_at, bo.total_spent, bo.estimated_value, bo.net_value,
+                       sp.name AS sealed_name, sp.set_id
+                FROM booster_openings bo
+                JOIN sealed_instances si ON si.id = bo.sealed_instance_id
+                JOIN sealed_products sp ON sp.id = si.sealed_product_id
+                WHERE bo.owner_id=:uid
+                ORDER BY bo.opened_at DESC
+                """
+            ),
+            {"uid": owner_id},
+        ).mappings().all()
+    return rows
+
+
+def list_opening_cards(engine, opening_id: str):
+    with engine.begin() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT boc.card_id, boc.variant, c.name, c.card_number, c.image_url
+                FROM booster_opening_cards boc
+                JOIN tcg_cards c ON c.id = boc.card_id
+                WHERE boc.opening_id=:oid
+                ORDER BY CAST(c.card_number AS UNSIGNED)
+                """
+            ),
+            {"oid": opening_id},
+        ).mappings().all()
+    return rows
+
+
+def get_cards_by_numbers(engine, set_id: str, numbers: list[str]):
+    with engine.begin() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, name, card_number, image_url
+                FROM tcg_cards
+                WHERE set_id=:sid AND card_number IN :nums
+                """
+            ),
+            {"sid": set_id, "nums": tuple(numbers)},
+        ).mappings().all()
+    return rows

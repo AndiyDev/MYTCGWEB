@@ -24,6 +24,9 @@ from lib.sealed import (
     add_sealed_instance,
     list_user_sealed,
     open_booster,
+    list_openings,
+    list_opening_cards,
+    get_cards_by_numbers,
 )
 from lib.sealed_scrape import scrape_featured_products
 from lib.room import get_room_items, get_available_items, place_item, clear_slot, get_user_by_username
@@ -133,6 +136,9 @@ input, textarea, select { border-radius: 10px !important; }
 .tab.active { color: var(--text); background: #1a1a25; border-color: #2c2c3a; }
 .chart { height: 180px; border-radius: 14px; border: 1px dashed #2b2b36; margin-top: 12px; position: relative; background: linear-gradient(180deg, rgba(110,242,215,0.08), rgba(0,0,0,0)); }
 .chart-line { position: absolute; left: 12px; right: 12px; top: 40px; height: 2px; background: linear-gradient(90deg, rgba(110,242,215,0.6), rgba(110,242,215,0.1)); }
+.slot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.slot { border: 1px dashed #2b2b36; border-radius: 12px; padding: 8px; min-height: 140px; background: #0f0f16; }
+.slot img { width: 100%; border-radius: 8px; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -618,7 +624,7 @@ def groups_view(user):
 
 def sealed_view(user):
     st.markdown("## Sealed")
-    tabs = st.tabs(["Produkter", "Mina Sealed", "Öppna Booster"])
+    tabs = st.tabs(["Produkter", "Mina Sealed", "Öppna Booster", "Öppningshistorik"])
 
     with tabs[0]:
         products = list_sealed_products(engine, "pokemon")
@@ -666,16 +672,42 @@ def sealed_view(user):
             return
         options = {f"{i['name']} ({i['id']})": i["id"] for i in owned}
         selected = st.selectbox("Välj booster", list(options.keys()))
-        numbers = st.text_input("Kortnummer (10 st, komma-separerat)", help="Ex: 12,7,4,25,36,41,9,1,55,60")
-        variants = st.text_input("Varianter (valfritt, 10 st)", help="Ex: Normal,Normal,Holofoil,...")
-        if st.button("Öppna booster") and numbers:
-            nums = [n.strip() for n in numbers.split(",") if n.strip()]
-            vars_list = [v.strip() for v in variants.split(",") if v.strip()] if variants else []
-            result = open_booster(engine, user["id"], options[selected], nums, vars_list)
+        card_numbers = []
+        variants_list = []
+        st.markdown("Fyll i 10 kortnummer:")
+        cols = st.columns(5)
+        for i in range(10):
+            with cols[i % 5]:
+                card_numbers.append(st.text_input(f"#{i+1}", key=f"bn-{i}"))
+                variants_list.append(st.selectbox("Variant", ["Normal", "Holofoil", "Reverse Holo"], key=f"bv-{i}"))
+        if st.button("Öppna booster"):
+            nums = [n.strip() for n in card_numbers if n.strip()]
+            result, opening_id = open_booster(engine, user["id"], options[selected], nums, variants_list)
             if result == "ok":
                 st.success("Booster öppnad!")
+                cards = list_opening_cards(engine, opening_id)
+                st.markdown("### Dina 10 kort")
+                st.markdown("<div class='slot-grid'>", unsafe_allow_html=True)
+                for c in cards:
+                    st.markdown("<div class='slot'>", unsafe_allow_html=True)
+                    if c.get("image_url"):
+                        st.image(c["image_url"], use_column_width=True)
+                    st.caption(f"{c['name']} #{c['card_number']}")
+                    st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
             else:
                 st.error(f"Fel: {result}")
+
+    with tabs[3]:
+        openings = list_openings(engine, user["id"])
+        if not openings:
+            st.caption("Inga öppningar ännu.")
+        for o in openings:
+            st.markdown("<div class='card-item'>", unsafe_allow_html=True)
+            st.markdown(f"<div class='name'>{o['sealed_name']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='meta'>Öppnad: {o['opened_at']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='meta'>Spent: {o['total_spent']}</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
 
 def budget_view(user):
