@@ -113,6 +113,16 @@ input, textarea, select { border-radius: 10px !important; }
 .detail-title { font-size: 1.25rem; font-weight: 700; margin-top: 8px; }
 .detail-sub { color: var(--muted); margin-top: 2px; }
 .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.detail-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.ghost-btn { border: 1px solid var(--stroke); padding: 8px 12px; border-radius: 999px; color: var(--text); background: #15151e; display: inline-block; }
+.price-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; }
+.price { font-size: 1.4rem; font-weight: 700; color: #7ef6da; }
+.price-sub { color: var(--muted); font-size: 0.85rem; }
+.tabs { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 12px; }
+.tab { border: 1px solid var(--stroke); border-radius: 999px; padding: 8px; text-align: center; color: var(--muted); }
+.tab.active { color: var(--text); background: #1a1a25; border-color: #2c2c3a; }
+.chart { height: 180px; border-radius: 14px; border: 1px dashed #2b2b36; margin-top: 12px; position: relative; background: linear-gradient(180deg, rgba(110,242,215,0.08), rgba(0,0,0,0)); }
+.chart-line { position: absolute; left: 12px; right: 12px; top: 40px; height: 2px; background: linear-gradient(90deg, rgba(110,242,215,0.6), rgba(110,242,215,0.1)); }
 </style>
 """,
     unsafe_allow_html=True,
@@ -298,9 +308,36 @@ def collection_view(user):
             st.markdown("<div class='detail-card'>", unsafe_allow_html=True)
             if card.get("image_url"):
                 st.image(card["image_url"], use_column_width=True)
+            st.markdown(
+                "<div class='detail-actions'>"
+                "<span class='ghost-btn'>←</span>"
+                "<span class='ghost-btn'>⋮</span>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
             st.markdown(f"<div class='detail-title'>{card['name']}</div>", unsafe_allow_html=True)
             st.markdown(
                 f"<div class='detail-sub'>{selected_set.get('set_name','')} • {card.get('rarity') or '—'} • #{card['card_number']}</div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                "<div class='price-row'>"
+                "<span class='ghost-btn'>View Sold Listings</span>"
+                "<span class='price'>$0.00</span>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown("<div class='price-sub'>Price data placeholder</div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div class='tabs'>"
+                "<div class='tab active'>RAW</div>"
+                "<div class='tab'>GRADED</div>"
+                "<div class='tab'>POP</div>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                "<div class='chart'><div class='chart-line'></div></div>",
                 unsafe_allow_html=True,
             )
             st.markdown("<div class='pill-row'>", unsafe_allow_html=True)
