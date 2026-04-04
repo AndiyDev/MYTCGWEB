@@ -3,7 +3,10 @@ import time
 from typing import Any
 
 import requests
-import streamlit as st
+try:
+    import streamlit as st
+except Exception:  # CLI context
+    st = None
 
 
 BASE_URL = "https://api.pokemontcg.io/v2"
@@ -11,10 +14,11 @@ BASE_URL = "https://api.pokemontcg.io/v2"
 
 def _headers() -> dict[str, str]:
     key = None
-    try:
-        key = st.secrets.get("pokemontcg_api_key")
-    except Exception:
-        key = None
+    if st is not None:
+        try:
+            key = st.secrets.get("pokemontcg_api_key")
+        except Exception:
+            key = None
     key = key or os.getenv("POKEMONTCG_API_KEY")
     return {"X-Api-Key": key} if key else {}
 
