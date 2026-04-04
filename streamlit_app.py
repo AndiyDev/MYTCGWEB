@@ -48,19 +48,53 @@ st.markdown(
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
+:root {
+  --bg: #0a0a0f;
+  --panel: #14141b;
+  --panel-2: #101018;
+  --stroke: #2b2b36;
+  --accent: #6df2d7;
+  --accent-2: #56a2ff;
+  --text: #e7e9ee;
+  --muted: #9aa0a6;
+}
+
 html, body, [class*="css"]  { font-family: 'Space Grotesk', sans-serif; }
-body { background: radial-gradient(1200px 600px at 10% -10%, #1b1b28 0%, #0b0b0f 55%); color: #e5e7eb; }
-section[data-testid="stSidebar"] { background: #14141a; border-right: 1px solid #26262f; }
+body {
+  background:
+    radial-gradient(900px 420px at 10% -10%, #1b1b28 0%, #0a0a0f 60%),
+    radial-gradient(900px 420px at 110% 0%, #10223a 0%, #0a0a0f 55%);
+  color: var(--text);
+}
+section[data-testid="stSidebar"] { background: #12121a; border-right: 1px solid var(--stroke); }
 div[data-testid="stVerticalBlock"] { gap: 1rem; }
 
-.card { background: #15151e; border: 1px solid #2b2b36; padding: 14px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+.card { background: var(--panel); border: 1px solid var(--stroke); padding: 14px; border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.3); }
 .section-title { font-size: 22px; font-weight: 700; margin: 10px 0; }
 
-.stButton > button { border-radius: 10px; border: 1px solid #2b2b36; background: #1b1b26; color: #f4f5f7; padding: 0.6rem 0.9rem; }
-.stButton > button:hover { border-color: #3a3a48; background: #232332; }
+.stButton > button {
+  border-radius: 10px; border: 1px solid var(--stroke);
+  background: linear-gradient(180deg, #1a1a26 0%, #12121a 100%);
+  color: var(--text); padding: 0.6rem 0.9rem;
+}
+.stButton > button:hover { border-color: #3a3a48; background: #1f1f2b; }
+.stButton > button:focus { box-shadow: 0 0 0 2px rgba(109,242,215,0.25); }
 input, textarea, select { border-radius: 10px !important; }
 
-.muted { color: #9aa0a6; }
+.muted { color: var(--muted); }
+
+.collection-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 16px; }
+.card-item {
+  background: var(--panel-2);
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+}
+.card-item .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
+.card-item .meta { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+.badge { display: inline-block; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--stroke); font-size: 0.75rem; color: var(--muted); }
+.value { font-weight: 700; font-size: 1.15rem; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -183,7 +217,7 @@ def collection_view(user):
         empty_state("Inga kort i detta set ännu.")
         return
 
-    grid = st.columns(5)
+    st.markdown("<div class='collection-grid'>", unsafe_allow_html=True)
     for i, card in enumerate(cards):
         variants = []
         if card["has_normal"]:
@@ -196,29 +230,34 @@ def collection_view(user):
         for variant in variants:
             count = counts.get(card["id"], {}).get(variant, 0)
             dim = count == 0
-            with grid[i % 5]:
-                st.markdown(f"**#{card['card_number']} {card['name']}**")
-                if card["image_url"]:
-                    render_card_image(card["image_url"], dim)
-                st.caption(f"{variant} • {str(count).zfill(2)}")
-                cols = st.columns(3)
-                with cols[0]:
-                    if st.button("Info", key=f"info-{card['id']}-{variant}"):
-                        st.session_state["open_card"] = {**card, "variant": variant, "count": count}
-                with cols[1]:
-                    if st.button("-", key=f"rem-{card['id']}-{variant}"):
-                        if not remove_instance(engine, user["id"], card["id"], variant):
-                            st.warning("Kortet är låst eller saknas.")
-                        cached_cards.clear()
-                        cached_progress.clear()
-                        st.rerun()
-                with cols[2]:
-                    if st.button("+", key=f"add-{card['id']}-{variant}"):
-                        if not add_instance(engine, user["id"], card["id"], variant, "Near Mint"):
-                            st.warning("Den varianten finns inte.")
-                        cached_cards.clear()
-                        cached_progress.clear()
-                        st.rerun()
+            st.markdown("<div class='card-item'>", unsafe_allow_html=True)
+            st.markdown(f"<div class='name'>#{card['card_number']} {card['name']}</div>", unsafe_allow_html=True)
+            if card["image_url"]:
+                render_card_image(card["image_url"], dim)
+            st.markdown(
+                f"<div class='meta'>{variant} • <span class='value'>{str(count).zfill(2)}</span></div>",
+                unsafe_allow_html=True,
+            )
+            cols = st.columns(3)
+            with cols[0]:
+                if st.button("Info", key=f"info-{card['id']}-{variant}"):
+                    st.session_state["open_card"] = {**card, "variant": variant, "count": count}
+            with cols[1]:
+                if st.button("-", key=f"rem-{card['id']}-{variant}"):
+                    if not remove_instance(engine, user["id"], card["id"], variant):
+                        st.warning("Kortet är låst eller saknas.")
+                    cached_cards.clear()
+                    cached_progress.clear()
+                    st.rerun()
+            with cols[2]:
+                if st.button("+", key=f"add-{card['id']}-{variant}"):
+                    if not add_instance(engine, user["id"], card["id"], variant, "Near Mint"):
+                        st.warning("Den varianten finns inte.")
+                    cached_cards.clear()
+                    cached_progress.clear()
+                    st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
     if st.session_state.get("open_card"):
         card = st.session_state["open_card"]
