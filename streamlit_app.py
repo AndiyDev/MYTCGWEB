@@ -26,19 +26,38 @@ from lib.market import (
     update_transaction,
 )
 
-st.set_page_config(page_title="MYTCGWEB", layout="wide")
+st.set_page_config(page_title="MYTCGWEB", layout="wide", initial_sidebar_state="expanded")
 
 engine = get_engine()
-init_schema(engine)
+
+
+@st.cache_resource(show_spinner=False)
+def ensure_schema():
+    init_schema(engine)
+    return True
+
+
+ensure_schema()
 
 
 st.markdown(
     """
 <style>
-body { background: #0b0b0f; color: #e5e7eb; }
-section[data-testid="stSidebar"] { background: #14141a; }
-.card { background: #16161d; border: 1px solid #2b2b36; padding: 12px; border-radius: 12px; }
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+html, body, [class*="css"]  { font-family: 'Space Grotesk', sans-serif; }
+body { background: radial-gradient(1200px 600px at 10% -10%, #1b1b28 0%, #0b0b0f 55%); color: #e5e7eb; }
+section[data-testid="stSidebar"] { background: #14141a; border-right: 1px solid #26262f; }
+div[data-testid="stVerticalBlock"] { gap: 1rem; }
+
+.card { background: #15151e; border: 1px solid #2b2b36; padding: 14px; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
 .section-title { font-size: 22px; font-weight: 700; margin: 10px 0; }
+
+.stButton > button { border-radius: 10px; border: 1px solid #2b2b36; background: #1b1b26; color: #f4f5f7; padding: 0.6rem 0.9rem; }
+.stButton > button:hover { border-color: #3a3a48; background: #232332; }
+input, textarea, select { border-radius: 10px !important; }
+
+.muted { color: #9aa0a6; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -51,6 +70,21 @@ def header():
 
 def empty_state(text: str):
     st.markdown(f"<div class='card'>{text}</div>", unsafe_allow_html=True)
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def cached_sets(game: str):
+    return get_sets(engine, game)
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def cached_cards(set_id: str):
+    return get_cards_for_set(engine, set_id)
+
+
+@st.cache_data(ttl=20, show_spinner=False)
+def cached_progress(user_id: str, game: str):
+    return get_set_progress(engine, user_id, game)
 
 
 def login_view():
@@ -112,13 +146,13 @@ def render_card_image(url: str, dim: bool):
 def collection_view(user):
     st.markdown("## Samling")
     game = st.radio("Välj TCG", ["pokemon"], horizontal=True)
-    sets = get_sets(engine, game)
+    sets = cached_sets(game)
 
     if not sets:
         empty_state("Inga set finns ännu. Lägg till set i Admin-sektionen.")
         return
 
-    progress = get_set_progress(engine, user["id"], game)
+    progress = cached_progress(user["id"], game)
 
     if st.session_state.get("selected_set_id"):
         if st.button("Tillbaka till set"):
@@ -138,7 +172,7 @@ def collection_view(user):
     if not selected_set_id:
         return
 
-    cards = get_cards_for_set(engine, selected_set_id)
+    cards = cached_cards(selected_set_id)
     counts = get_user_variant_counts(engine, user["id"], selected_set_id)
 
     st.markdown("### Kort i set")
@@ -172,11 +206,15 @@ def collection_view(user):
                     if st.button("-", key=f"rem-{card['id']}-{variant}"):
                         if not remove_instance(engine, user["id"], card["id"], variant):
                             st.warning("Kortet är låst eller saknas.")
+                        cached_cards.clear()
+                        cached_progress.clear()
                         st.rerun()
                 with cols[2]:
                     if st.button("+", key=f"add-{card['id']}-{variant}"):
                         if not add_instance(engine, user["id"], card["id"], variant, "Near Mint"):
                             st.warning("Den varianten finns inte.")
+                        cached_cards.clear()
+                        cached_progress.clear()
                         st.rerun()
 
     if st.session_state.get("open_card"):

@@ -15,6 +15,7 @@ def _build_mysql_url():
     return f"mysql+pymysql://{user}:{password}@{host}:{port}/{name}?charset=utf8mb4"
 
 
+@st.cache_resource(show_spinner=False)
 def get_engine():
     url = os.getenv("DATABASE_URL")
     if not url:
