@@ -14,6 +14,7 @@ from lib.collection import (
 )
 from lib.pokemon_import import fetch_pokemon_card
 from lib.room import get_room_items, get_available_items, place_item, clear_slot, get_user_by_username
+from lib.groups import list_groups, create_group, join_group, is_member, list_posts, create_post, delete_post
 
 st.set_page_config(page_title="MYTCGWEB", layout="wide")
 
@@ -218,9 +219,86 @@ def market_view():
     st.info("Marknaden byggs nu. Här kommer sälj/köp/byte med soft-lockade kort.")
 
 
-def groups_view():
+def groups_view(user):
     st.markdown("## Social Hubb")
-    st.info("Gruppflöde och chatt byggs nu. Vi behåller flödet men gör det redo för Streamlit.")
+
+    left, right = st.columns([2, 3])
+    with left:
+        st.markdown("### Grupper")
+        groups = list_groups(engine)
+        for g in groups:
+            col = st.columns([3, 1, 1])
+            with col[0]:
+                st.markdown(f"**{g['name']}**")
+                st.caption(g.get("description") or "")
+            with col[1]:
+                st.caption(f"{g['members']} medlemmar")
+            with col[2]:
+                if st.button("Öppna", key=f"open-{g['id']}"):
+                    st.session_state["active_group"] = g["id"]
+                    st.rerun()
+
+        st.markdown("#### Skapa grupp")
+        name = st.text_input("Gruppnamn")
+        desc = st.text_input("Beskrivning")
+        if st.button("Skapa") and name:
+            create_group(engine, name, desc or None)
+            st.rerun()
+
+    with right:
+        group_id = st.session_state.get("active_group")
+        if not group_id:
+            st.info("Välj en grupp till höger.")
+            return
+
+        member = is_member(engine, group_id, user["id"])
+        if not member:
+            if st.button("Gå med i grupp"):
+                join_group(engine, group_id, user["id"])
+                st.rerun()
+            st.warning("Du måste gå med för att se innehåll.")
+            return
+
+        tabs = st.tabs(["Inlägg", "Sälj", "Byte", "Köp", "Chatt"])
+        categories = {"Inlägg": "POST", "Sälj": "SELL", "Byte": "TRADE", "Köp": "BUY"}
+
+        for idx, tab in enumerate(tabs):
+            with tab:
+                if tab.label == "Chatt":
+                    st.info("Chatt byggs nu.")
+                    continue
+                category = categories.get(tab.label)
+                posts = list_posts(engine, group_id, category)
+                for post in posts:
+                    st.markdown(f"**{post['username']}** • {post['created_at']}")
+                    st.write(post["content"])
+                    if post.get("offered_name"):
+                        st.caption(f"Erbjuder: {post['offered_name']} #{post['offered_number']}")
+                    if st.button("Ta bort", key=f"del-{post['id']}"):
+                        delete_post(engine, post["id"], user["id"])
+                        st.rerun()
+
+                st.markdown("#### Skapa inlägg")
+                content = st.text_area("Text", key=f"content-{tab.label}")
+                trade_type = None
+                offered_item_id = None
+                requested_card_id = None
+                if category in ["SELL", "TRADE", "BUY"]:
+                    trade_type = st.selectbox("Trade type", ["SPECIFIC", "MULTI", "RANDOM"], key=f"trade-{tab.label}") if category == "TRADE" else None
+                    offered_item_id = st.text_input("Offered item id", key=f"offer-{tab.label}")
+                    requested_card_id = st.text_input("Requested card id", key=f"req-{tab.label}")
+
+                if st.button("Publicera", key=f"post-{tab.label}"):
+                    err = create_post(engine, group_id, user["id"], category, content, trade_type, offered_item_id, requested_card_id)
+                    if err == "not_owner":
+                        st.error("Du äger inte kortet")
+                    elif err == "not_verified":
+                        st.error("Kortet måste vara verifierat")
+                    elif err == "locked":
+                        st.error("Kortet är låst")
+                    else:
+                        st.success("Publicerat")
+                        st.rerun()
 
 
 def admin_view(user):
@@ -358,9 +436,9 @@ def main():
     elif page == "Marknad":
         market_view()
     elif page == "Social Hubb":
-        groups_view()
+        groups_view(user)
     elif page == "Mitt Rum":
-        room_view()
+        room_view(user)
     elif page == "Admin":
         admin_view(user)
 

@@ -29,10 +29,10 @@
 - [ ] Transaction checklist
 
 ## Phase 4 — Social Hubb
-- [ ] Group list + join
-- [ ] Group tabs with filtering
-- [ ] Trade/sell/buy creation
-- [ ] Delete post (owner only)
+- [x] Group list + join
+- [x] Group tabs with filtering
+- [x] Trade/sell/buy creation
+- [x] Delete post (owner only)
 
 ## Phase 5 — Room
 - [x] Room layout storage
