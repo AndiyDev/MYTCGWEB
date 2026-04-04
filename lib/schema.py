@@ -144,6 +144,24 @@ DEPENDENT_TABLES = [
 ]
 
 
+FALLBACK_TABLES = {
+    "card_instances": """
+    CREATE TABLE IF NOT EXISTS card_instances (
+        id CHAR(36) PRIMARY KEY,
+        owner_id CHAR(36) NOT NULL,
+        card_id CHAR(36) NOT NULL,
+        variant VARCHAR(32) DEFAULT 'Normal',
+        condition_label VARCHAR(32) DEFAULT 'Near Mint',
+        state_label VARCHAR(32) DEFAULT 'PLACEHOLDER',
+        is_public TINYINT(1) DEFAULT 0,
+        locked_by_listing_id CHAR(36),
+        locked_by_post_id CHAR(36),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+}
+
+
 ALTER_SQL = [
     "ALTER TABLE users ENGINE=InnoDB",
     "ALTER TABLE tcg_sets ENGINE=InnoDB",
@@ -163,7 +181,7 @@ ALTER_SQL = [
 
 def init_schema(engine):
     with engine.begin() as conn:
-        for statement in BASE_TABLES:
+        for idx, statement in enumerate(BASE_TABLES, start=1):
             conn.execute(text(statement))
         for statement in ALTER_SQL:
             try:
@@ -171,4 +189,13 @@ def init_schema(engine):
             except Exception:
                 pass
         for statement in DEPENDENT_TABLES:
-            conn.execute(text(statement))
+            try:
+                conn.execute(text(statement))
+            except Exception as exc:
+                if "card_instances" in statement and "card_instances" in FALLBACK_TABLES:
+                    try:
+                        conn.execute(text(FALLBACK_TABLES["card_instances"]))
+                    except Exception:
+                        raise
+                else:
+                    raise
