@@ -18,6 +18,8 @@ def main():
     parser.add_argument("--start-page", type=int, default=1)
     parser.add_argument("--max-pages", type=int, default=0, help="0 = no limit")
     parser.add_argument("--sleep", type=float, default=0.2)
+    parser.add_argument("--query", type=str, default="", help="Pokemon TCG API query string, e.g. \"set.id:base1\"")
+    parser.add_argument("--set-id", type=str, default="", help="Comma separated set IDs (overrides --query)")
     args = parser.parse_args()
 
     engine = get_engine()
@@ -26,13 +28,23 @@ def main():
     upsert_sets(engine, sets)
     print(f"Imported {len(sets)} sets.")
 
+    query = args.query.strip()
+    if args.set_id:
+        parts = [p.strip() for p in args.set_id.split(",") if p.strip()]
+        if parts:
+            query = " OR ".join([f"set.id:{p}" for p in parts])
+
     page = args.start_page
     total_cards = 0
     while True:
         if args.max_pages and page >= args.start_page + args.max_pages:
             break
-        data = fetch_cards_page(page, args.page_size)
+        data = fetch_cards_page(page, args.page_size, query=query or None)
         cards = data.get("data", [])
+        if page == args.start_page:
+            total_count = data.get("totalCount")
+            if total_count is not None:
+                print(f"API totalCount for query: {total_count}")
         if not cards:
             break
         count = upsert_cards(engine, cards)
