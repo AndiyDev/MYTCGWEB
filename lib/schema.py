@@ -1,7 +1,10 @@
 from sqlalchemy import text
 
 
-SCHEMA_SQL = [
+TABLE_OPTIONS = "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+
+
+BASE_TABLES = [
     """
     CREATE TABLE IF NOT EXISTS users (
         id CHAR(36) PRIMARY KEY,
@@ -15,7 +18,7 @@ SCHEMA_SQL = [
         locked_until TIMESTAMP NULL,
         last_login_at TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ) """ + TABLE_OPTIONS + """;
     """,
     """
     CREATE TABLE IF NOT EXISTS tcg_sets (
@@ -27,7 +30,7 @@ SCHEMA_SQL = [
         total_cards INT DEFAULT 0,
         logo_path TEXT,
         symbol_path TEXT
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ) """ + TABLE_OPTIONS + """;
     """,
     """
     CREATE TABLE IF NOT EXISTS tcg_cards (
@@ -41,8 +44,12 @@ SCHEMA_SQL = [
         has_holofoil TINYINT(1) DEFAULT 0,
         has_reverse_holo TINYINT(1) DEFAULT 0,
         FOREIGN KEY (set_id) REFERENCES tcg_sets(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ) """ + TABLE_OPTIONS + """;
     """,
+]
+
+
+DEPENDENT_TABLES = [
     """
     CREATE TABLE IF NOT EXISTS card_instances (
         id CHAR(36) PRIMARY KEY,
@@ -57,7 +64,7 @@ SCHEMA_SQL = [
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (card_id) REFERENCES tcg_cards(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ) """ + TABLE_OPTIONS + """;
     """,
     """
     CREATE TABLE IF NOT EXISTS listings (
@@ -71,7 +78,7 @@ SCHEMA_SQL = [
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (item_id) REFERENCES card_instances(id) ON DELETE CASCADE,
         FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ) """ + TABLE_OPTIONS + """;
     """,
     """
     CREATE TABLE IF NOT EXISTS groups (
@@ -79,7 +86,7 @@ SCHEMA_SQL = [
         name VARCHAR(128) NOT NULL,
         description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ) """ + TABLE_OPTIONS + """;
     """,
     """
     CREATE TABLE IF NOT EXISTS group_members (
@@ -91,7 +98,7 @@ SCHEMA_SQL = [
         UNIQUE KEY uq_group_user (group_id, user_id),
         FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ) """ + TABLE_OPTIONS + """;
     """,
     """
     CREATE TABLE IF NOT EXISTS group_posts (
@@ -107,7 +114,7 @@ SCHEMA_SQL = [
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
         FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ) """ + TABLE_OPTIONS + """;
     """,
     """
     CREATE TABLE IF NOT EXISTS room_items (
@@ -121,7 +128,7 @@ SCHEMA_SQL = [
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (item_id) REFERENCES card_instances(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ) """ + TABLE_OPTIONS + """;
     """,
     """
     CREATE TABLE IF NOT EXISTS audit_logs (
@@ -132,12 +139,21 @@ SCHEMA_SQL = [
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_audit_user (user_id),
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ) """ + TABLE_OPTIONS + """;
     """,
 ]
 
 
 ALTER_SQL = [
+    "ALTER TABLE users ENGINE=InnoDB",
+    "ALTER TABLE tcg_sets ENGINE=InnoDB",
+    "ALTER TABLE tcg_cards ENGINE=InnoDB",
+    "ALTER TABLE users CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+    "ALTER TABLE tcg_sets CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+    "ALTER TABLE tcg_cards CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+    "ALTER TABLE users MODIFY id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+    "ALTER TABLE tcg_cards MODIFY id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+    "ALTER TABLE tcg_cards MODIFY set_id CHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
     "ALTER TABLE users ADD COLUMN role VARCHAR(16) DEFAULT 'USER'",
     "ALTER TABLE users ADD COLUMN failed_login_attempts INT DEFAULT 0",
     "ALTER TABLE users ADD COLUMN locked_until TIMESTAMP NULL",
@@ -147,10 +163,12 @@ ALTER_SQL = [
 
 def init_schema(engine):
     with engine.begin() as conn:
-        for statement in SCHEMA_SQL:
+        for statement in BASE_TABLES:
             conn.execute(text(statement))
         for statement in ALTER_SQL:
             try:
                 conn.execute(text(statement))
             except Exception:
                 pass
+        for statement in DEPENDENT_TABLES:
+            conn.execute(text(statement))
