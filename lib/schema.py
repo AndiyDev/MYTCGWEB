@@ -221,6 +221,10 @@ FALLBACK_TABLES = {
 
 
 ALTER_SQL = [
+    "ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)",
+    "ALTER TABLE users ADD COLUMN display_name VARCHAR(128)",
+    "ALTER TABLE users ADD COLUMN avatar_url TEXT",
+    "ALTER TABLE users ADD COLUMN reputation_level INT DEFAULT 1",
     "ALTER TABLE users ENGINE=InnoDB",
     "ALTER TABLE tcg_sets ENGINE=InnoDB",
     "ALTER TABLE tcg_cards ENGINE=InnoDB",

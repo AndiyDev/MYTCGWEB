@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 from sqlalchemy import text
 import streamlit as st
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
 LOCKOUT_THRESHOLD = 5
