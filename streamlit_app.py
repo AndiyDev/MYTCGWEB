@@ -15,6 +15,7 @@ from lib.collection import (
 from lib.pokemon_import import fetch_pokemon_card
 from lib.room import get_room_items, get_available_items, place_item, clear_slot, get_user_by_username
 from lib.groups import list_groups, create_group, join_group, is_member, list_posts, create_post, delete_post
+from lib.market import list_listings, create_listing, close_listing
 
 st.set_page_config(page_title="MYTCGWEB", layout="wide")
 
@@ -214,9 +215,41 @@ def room_view(user):
                 render_room_grid(items_by_slot, ["Wall-Right-1-1", "Wall-Right-2-1", "Wall-Right-3-1"], "Höger vägg")
 
 
-def market_view():
+def market_view(user):
     st.markdown("## Marknad")
-    st.info("Marknaden byggs nu. Här kommer sälj/köp/byte med soft-lockade kort.")
+    listings = list_listings(engine)
+
+    st.markdown("### Aktiva annonser")
+    cols = st.columns(3)
+    for i, row in enumerate(listings):
+        with cols[i % 3]:
+            if row.get("image_url"):
+                st.image(row["image_url"], use_column_width=True)
+            st.markdown(f"**{row['name']} #{row['card_number']}**")
+            st.caption(f"Säljare: {row['seller']}")
+            st.caption(f"Pris: {row['price']} {row['currency']}")
+            st.caption(row.get("notes") or "")
+            if row["seller"] == user["username"]:
+                if st.button("Ta bort", key=f"close-{row['id']}"):
+                    close_listing(engine, row["id"], user["id"])
+                    st.rerun()
+
+    st.markdown("### Skapa annons")
+    item_id = st.text_input("Card instance ID")
+    price = st.number_input("Pris", min_value=0.0, step=1.0)
+    currency = st.text_input("Valuta", value="SEK")
+    notes = st.text_area("Beskrivning")
+    if st.button("Skapa annons"):
+        err = create_listing(engine, user["id"], item_id, price, currency, notes)
+        if err == "not_owner":
+            st.error("Du äger inte kortet")
+        elif err == "not_verified":
+            st.error("Kortet måste vara verifierat")
+        elif err == "locked":
+            st.error("Kortet är låst")
+        else:
+            st.success("Annons skapad")
+            st.rerun()
 
 
 def groups_view(user):
@@ -262,7 +295,7 @@ def groups_view(user):
         tabs = st.tabs(["Inlägg", "Sälj", "Byte", "Köp", "Chatt"])
         categories = {"Inlägg": "POST", "Sälj": "SELL", "Byte": "TRADE", "Köp": "BUY"}
 
-        for idx, tab in enumerate(tabs):
+        for tab in tabs:
             with tab:
                 if tab.label == "Chatt":
                     st.info("Chatt byggs nu.")
@@ -434,7 +467,7 @@ def main():
     if page == "Samling":
         collection_view(user)
     elif page == "Marknad":
-        market_view()
+        market_view(user)
     elif page == "Social Hubb":
         groups_view(user)
     elif page == "Mitt Rum":

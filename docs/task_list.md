@@ -23,8 +23,8 @@
 - [x] Pokemon.com import pipeline
 
 ## Phase 3 — Market
-- [ ] Listings CRUD
-- [ ] Soft-lock on listing create
+- [x] Listings CRUD
+- [x] Soft-lock on listing create
 - [ ] Buyer interest flow
 - [ ] Transaction checklist
 
