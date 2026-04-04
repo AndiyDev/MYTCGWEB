@@ -139,6 +139,14 @@ input, textarea, select { border-radius: 10px !important; }
 .slot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .slot { border: 1px dashed #2b2b36; border-radius: 12px; padding: 8px; min-height: 140px; background: #0f0f16; }
 .slot img { width: 100%; border-radius: 8px; }
+.pack-row { display: flex; align-items: center; gap: 16px; margin: 8px 0 16px; }
+.pack { width: 140px; height: 200px; border-radius: 14px; background: linear-gradient(160deg, #1c1c2b, #0f0f16); border: 1px solid #2b2b36; position: relative; overflow: hidden; }
+.pack:after { content: ""; position: absolute; inset: 0; background: linear-gradient(130deg, rgba(109,242,215,0.25), rgba(0,0,0,0)); opacity: 0.7; }
+.pack.opened { transform: rotate(-2deg); }
+.pack-strip { position: absolute; left: 0; right: 0; top: 8px; height: 6px; background: rgba(255,255,255,0.08); }
+.pack-title { font-size: 0.85rem; color: var(--muted); }
+.animate-card { animation: flyout 0.6s ease forwards; }
+@keyframes flyout { from { transform: translateY(-10px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 </style>
 """,
     unsafe_allow_html=True,
@@ -672,6 +680,10 @@ def sealed_view(user):
             return
         options = {f"{i['name']} ({i['id']})": i["id"] for i in owned}
         selected = st.selectbox("Välj booster", list(options.keys()))
+        st.markdown("<div class='pack-row'>", unsafe_allow_html=True)
+        st.markdown("<div class='pack'><div class='pack-strip'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='pack-title'>10 kort kommer visas här efter öppning</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
         card_numbers = []
         variants_list = []
         st.markdown("Fyll i 10 kortnummer:")
@@ -689,7 +701,7 @@ def sealed_view(user):
                 st.markdown("### Dina 10 kort")
                 st.markdown("<div class='slot-grid'>", unsafe_allow_html=True)
                 for c in cards:
-                    st.markdown("<div class='slot'>", unsafe_allow_html=True)
+                    st.markdown("<div class='slot animate-card'>", unsafe_allow_html=True)
                     if c.get("image_url"):
                         st.image(c["image_url"], use_column_width=True)
                     st.caption(f"{c['name']} #{c['card_number']}")
