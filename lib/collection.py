@@ -10,6 +10,24 @@ def get_sets(engine, game: str):
     return rows
 
 
+def get_set_progress(engine, user_id: str, game: str):
+    with engine.begin() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT s.id AS set_id, COUNT(DISTINCT c.id) AS owned
+                FROM tcg_sets s
+                LEFT JOIN tcg_cards c ON c.set_id = s.id
+                LEFT JOIN card_instances ci ON ci.card_id = c.id AND ci.owner_id = :uid
+                WHERE s.game = :g
+                GROUP BY s.id
+                """
+            ),
+            {"uid": user_id, "g": game},
+        ).mappings().all()
+    return {row["set_id"]: int(row["owned"] or 0) for row in rows}
+
+
 def get_cards_for_set(engine, set_id: str):
     with engine.begin() as conn:
         rows = conn.execute(
@@ -50,10 +68,12 @@ def get_user_variant_counts(engine, user_id: str, set_id: str):
 def add_instance(engine, user_id: str, card_id: str, variant: str, condition_label: str):
     with engine.begin() as conn:
         flags = conn.execute(
-            text("""
+            text(
+                """
                 SELECT has_normal, has_holofoil, has_reverse_holo
                 FROM tcg_cards WHERE id=:cid
-            """),
+                """
+            ),
             {"cid": card_id},
         ).mappings().first()
         if not flags:

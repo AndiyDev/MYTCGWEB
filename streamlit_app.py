@@ -1,9 +1,18 @@
+import os
 import uuid
 import streamlit as st
 from lib.db import get_engine
 from lib.schema import init_schema
 from lib.auth import login_user, register_user, logout_user, get_current_user, require_admin
-from lib.collection import get_sets, get_cards_for_set, get_user_variant_counts, add_instance, remove_instance
+from lib.collection import (
+    get_sets,
+    get_cards_for_set,
+    get_user_variant_counts,
+    add_instance,
+    remove_instance,
+    get_set_progress,
+)
+from lib.pokemon_import import fetch_pokemon_card
 
 st.set_page_config(page_title="MYTCGWEB", layout="wide")
 
@@ -43,6 +52,28 @@ def login_view():
                 st.success("Konto skapat. Logga in.")
 
 
+def render_set_tile(set_row, owned: int, total: int):
+    logo = set_row.get("logo_path") or ""
+    symbol = set_row.get("symbol_path") or ""
+    if logo and os.path.exists(logo):
+        st.image(logo, use_column_width=True)
+    else:
+        st.markdown(f"**{set_row['set_name']}**")
+    if symbol and os.path.exists(symbol):
+        st.image(symbol, width=32)
+    st.caption(f"{str(owned).zfill(3)}/{str(total).zfill(3)}")
+
+
+def render_card_image(url: str, dim: bool):
+    if dim:
+        st.markdown(
+            f"<img src='{url}' style='width:100%; opacity:0.4; border-radius:6px;'/>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.image(url, use_column_width=True)
+
+
 def collection_view(user):
     st.markdown("## Samling")
     game = st.radio("Välj TCG", ["pokemon"], horizontal=True)
@@ -52,11 +83,19 @@ def collection_view(user):
         st.info("Inga set finns ännu. Lägg till set i Admin-sektionen.")
         return
 
+    progress = get_set_progress(engine, user["id"], game)
+
+    if st.session_state.get("selected_set_id"):
+        if st.button("Tillbaka till set"):
+            st.session_state.pop("selected_set_id")
+            st.rerun()
+
     set_cols = st.columns(4)
     selected_set_id = st.session_state.get("selected_set_id")
     for idx, s in enumerate(sets):
         with set_cols[idx % 4]:
-            clicked = st.button(f"{s['set_name']}\n{str(s['total_cards']).zfill(3)}", use_container_width=True)
+            clicked = st.button(s["set_name"], use_container_width=True)
+            render_set_tile(s, progress.get(s["id"], 0), s["total_cards"])
             if clicked:
                 st.session_state["selected_set_id"] = s["id"]
                 st.rerun()
@@ -80,22 +119,39 @@ def collection_view(user):
 
         for variant in variants:
             count = counts.get(card["id"], {}).get(variant, 0)
+            dim = count == 0
             with grid[i % 5]:
                 st.markdown(f"**#{card['card_number']} {card['name']}**")
                 if card["image_url"]:
-                    st.image(card["image_url"], use_column_width=True)
+                    render_card_image(card["image_url"], dim)
                 st.caption(f"{variant} • {str(count).zfill(2)}")
-                cols = st.columns(2)
+                cols = st.columns(3)
                 with cols[0]:
+                    if st.button("Info", key=f"info-{card['id']}-{variant}"):
+                        st.session_state["open_card"] = {**card, "variant": variant, "count": count}
+                with cols[1]:
                     if st.button("-", key=f"rem-{card['id']}-{variant}"):
                         if not remove_instance(engine, user["id"], card["id"], variant):
                             st.warning("Kortet är låst eller saknas.")
                         st.rerun()
-                with cols[1]:
+                with cols[2]:
                     if st.button("+", key=f"add-{card['id']}-{variant}"):
                         if not add_instance(engine, user["id"], card["id"], variant, "Near Mint"):
                             st.warning("Den varianten finns inte.")
                         st.rerun()
+
+    if st.session_state.get("open_card"):
+        card = st.session_state["open_card"]
+        with st.dialog(f"{card['name']} • {card['variant']}"):
+            if card.get("image_url"):
+                st.image(card["image_url"], use_column_width=True)
+            st.write(f"Nummer: {card['card_number']}")
+            st.write(f"Rarity: {card.get('rarity')}")
+            st.write(f"Variant: {card['variant']}")
+            st.write(f"Äger: {str(card['count']).zfill(2)}")
+            if st.button("Stäng"):
+                st.session_state.pop("open_card")
+                st.rerun()
 
 
 def market_view():
@@ -188,6 +244,40 @@ def admin_view(user):
                     },
                 )
             st.success("Kort sparat")
+
+    with st.form("import_card"):
+        st.subheader("Importera från pokemon.com")
+        set_id = st.text_input("Set ID (för databasen)")
+        set_code = st.text_input("Set code (t.ex. me01)")
+        card_number = st.text_input("Kortnummer (t.ex. 36)")
+        submitted = st.form_submit_button("Hämta och spara")
+        if submitted and set_id and set_code and card_number:
+            data = fetch_pokemon_card(set_code, card_number)
+            if not data:
+                st.error("Kunde inte hämta kortet")
+            else:
+                import sqlalchemy as sa
+                with engine.begin() as conn:
+                    conn.execute(
+                        sa.text(
+                            """
+                            INSERT INTO tcg_cards (id, set_id, card_number, name, rarity, image_url, has_normal, has_holofoil, has_reverse_holo)
+                            VALUES (:id, :sid, :num, :name, :rar, :img, :hn, :hh, :hr)
+                            """
+                        ),
+                        {
+                            "id": str(uuid.uuid4()),
+                            "sid": set_id,
+                            "num": card_number,
+                            "name": data.get("name"),
+                            "rar": data.get("rarity"),
+                            "img": data.get("image_url"),
+                            "hn": 1,
+                            "hh": 1 if data.get("rarity", "").lower().find("holo") >= 0 else 0,
+                            "hr": 0,
+                        },
+                    )
+                st.success("Kort importerat")
 
 
 def main():

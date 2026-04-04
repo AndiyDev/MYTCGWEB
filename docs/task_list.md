@@ -17,10 +17,10 @@
 - [x] Set and card schema
 - [x] Show variants as separate entries
 - [x] Add/remove instances per variant
-- [ ] Set logos/symbols display
-- [ ] Card details modal (big view)
-- [ ] Greyed cards for unowned variants
-- [ ] Pokemon.com import pipeline
+- [x] Set logos/symbols display
+- [x] Card details modal (big view)
+- [x] Greyed cards for unowned variants
+- [x] Pokemon.com import pipeline
 
 ## Phase 3 — Market
 - [ ] Listings CRUD
