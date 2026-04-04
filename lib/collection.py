@@ -65,7 +65,7 @@ def get_user_variant_counts(engine, user_id: str, set_id: str):
     return counts
 
 
-def add_instance(engine, user_id: str, card_id: str, variant: str, condition_label: str):
+def add_instance(engine, user_id: str, card_id: str, variant: str, condition_label: str, purchase_price: float = 0.0):
     with engine.begin() as conn:
         flags = conn.execute(
             text(
@@ -89,11 +89,11 @@ def add_instance(engine, user_id: str, card_id: str, variant: str, condition_lab
         conn.execute(
             text(
                 """
-                INSERT INTO card_instances (id, owner_id, card_id, variant, condition_label)
-                VALUES (UUID(), :uid, :cid, :v, :c)
+                INSERT INTO card_instances (id, owner_id, card_id, variant, condition_label, purchase_price, purchase_date)
+                VALUES (UUID(), :uid, :cid, :v, :c, :p, CURDATE())
                 """
             ),
-            {"uid": user_id, "cid": card_id, "v": variant, "c": condition_label},
+            {"uid": user_id, "cid": card_id, "v": variant, "c": condition_label, "p": purchase_price},
         )
     return True
 

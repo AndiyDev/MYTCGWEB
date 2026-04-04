@@ -17,6 +17,7 @@ from lib.pokemon_api import fetch_sets, fetch_cards_page
 from lib.import_pokemon import upsert_sets, upsert_cards
 from lib.pokemon_com import import_set_from_pokemon_com
 from lib.pricing import scrape_source
+from lib.analytics import list_owned_cards
 from lib.sealed import (
     list_sealed_products,
     create_sealed_product,
@@ -307,12 +308,12 @@ def collection_view(user):
                     cached_progress.clear()
                     st.rerun()
             with cols[2]:
-                if st.button("+", key=f"add-{card['id']}-{variant}"):
-                    if not add_instance(engine, user["id"], card["id"], variant, "Near Mint"):
-                        st.warning("Den varianten finns inte.")
-                    cached_cards.clear()
-                    cached_progress.clear()
-                    st.rerun()
+                    if st.button("+", key=f"add-{card['id']}-{variant}"):
+                        if not add_instance(engine, user["id"], card["id"], variant, "Near Mint", 0.0):
+                            st.warning("Den varianten finns inte.")
+                        cached_cards.clear()
+                        cached_progress.clear()
+                        st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -386,6 +387,14 @@ def collection_view(user):
             st.markdown(f"<span class='badge'>Äger {str(card['count']).zfill(2)}</span>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("#### Lägg till med pris")
+            paid = st.number_input("Pris du betalade (SEK)", min_value=0.0, step=1.0, key=f"paid-{card['id']}-{card['variant']}")
+            if st.button("Lägg till kort med pris", key=f"addpaid-{card['id']}-{card['variant']}"):
+                if not add_instance(engine, user["id"], card["id"], card["variant"], "Near Mint", paid):
+                    st.warning("Den varianten finns inte.")
+                cached_cards.clear()
+                cached_progress.clear()
+                st.rerun()
             if st.button("Stäng"):
                 st.session_state.pop("open_card")
                 st.rerun()
@@ -670,14 +679,60 @@ def sealed_view(user):
 
 
 def budget_view(user):
-    st.markdown("## Budget")
-    with engine.begin() as conn:
-        spent_cards = conn.execute(text("SELECT SUM(purchase_price) FROM card_instances WHERE owner_id=:u"), {"u": user["id"]}).scalar() or 0
-        spent_sealed = conn.execute(text("SELECT SUM(purchase_price) FROM sealed_instances WHERE owner_id=:u"), {"u": user["id"]}).scalar() or 0
-    total_spent = float(spent_cards) + float(spent_sealed)
-    st.metric("Totalt spenderat", f"{total_spent:.2f} SEK")
-    st.metric("Kort", f"{float(spent_cards):.2f} SEK")
-    st.metric("Sealed", f"{float(spent_sealed):.2f} SEK")
+    st.markdown("## Analys")
+    tabs = st.tabs(["Budget", "Flipping", "Säljassistent"])
+
+    with tabs[0]:
+        with engine.begin() as conn:
+            spent_cards = conn.execute(text("SELECT SUM(purchase_price) FROM card_instances WHERE owner_id=:u"), {"u": user["id"]}).scalar() or 0
+            spent_sealed = conn.execute(text("SELECT SUM(purchase_price) FROM sealed_instances WHERE owner_id=:u"), {"u": user["id"]}).scalar() or 0
+        total_spent = float(spent_cards) + float(spent_sealed)
+        st.metric("Totalt spenderat", f"{total_spent:.2f} SEK")
+        st.metric("Kort", f"{float(spent_cards):.2f} SEK")
+        st.metric("Sealed", f"{float(spent_sealed):.2f} SEK")
+
+    with tabs[1]:
+        st.markdown("### Flipping Dashboard")
+        fee = st.slider("Plattformsavgift %", min_value=0, max_value=20, value=10, step=1)
+        source = st.selectbox("Pris-källa", ["Cardmarket", "TCGPlayer", "Tradera", "Blocket", "Vinted", "eBay"])
+        run = st.button("Analysera")
+        if run:
+            rows = list_owned_cards(engine, user["id"])
+            for r in rows[:100]:
+                if not r.get("purchase_price"):
+                    continue
+                query = f"{r['name']} {r.get('set_name','')} {r['card_number']}"
+                result = cached_price(source, query)
+                if result.get("error"):
+                    st.caption(f"{r['name']}: ingen prisdata")
+                    continue
+                median = result.get("median", 0)
+                break_even = float(r["purchase_price"]) / (1 - fee / 100) if fee < 100 else 0
+                color = "🟢" if median >= break_even else "🔴"
+                st.markdown(f"{color} **{r['name']}** • Betalt: {r['purchase_price']} • Median: {median:.2f} • Break-even: {break_even:.2f}")
+
+    with tabs[2]:
+        st.markdown("### Smart Price Suggester")
+        rows = list_owned_cards(engine, user["id"])
+        options = {f"{r['name']} #{r['card_number']} ({r.get('set_name','')})": r for r in rows}
+        if not options:
+            st.caption("Inga kort ännu.")
+        else:
+            selected_label = st.selectbox("Välj kort", list(options.keys()))
+            selected = options[selected_label]
+            source = st.selectbox("Pris-källa", ["Cardmarket", "TCGPlayer", "Tradera", "Blocket", "Vinted", "eBay"], key="sugg-source")
+            query = f"{selected['name']} {selected.get('set_name','')} {selected['card_number']}"
+            if st.button("Hämta pris"):
+                result = cached_price(source, query)
+                if result.get("error"):
+                    st.error("Ingen prisdata")
+                else:
+                    low = result.get("low", 0)
+                    median = result.get("median", 0)
+                    high = result.get("high", 0)
+                    st.metric("Quick Sale", f"{max(low * 0.95, 0):.2f}")
+                    st.metric("Fair Market", f"{median:.2f}")
+                    st.metric("High-End", f"{high:.2f}")
 
 
 def admin_view(user):
