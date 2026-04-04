@@ -15,7 +15,16 @@ from lib.collection import (
 from lib.pokemon_import import fetch_pokemon_card
 from lib.room import get_room_items, get_available_items, place_item, clear_slot, get_user_by_username
 from lib.groups import list_groups, create_group, join_group, is_member, list_posts, create_post, delete_post
-from lib.market import list_listings, create_listing, close_listing
+from lib.market import (
+    list_listings,
+    create_listing,
+    close_listing,
+    create_interest,
+    list_interests_for_seller,
+    update_interest,
+    list_transactions,
+    update_transaction,
+)
 
 st.set_page_config(page_title="MYTCGWEB", layout="wide")
 
@@ -233,6 +242,10 @@ def market_view(user):
                 if st.button("Ta bort", key=f"close-{row['id']}"):
                     close_listing(engine, row["id"], user["id"])
                     st.rerun()
+            else:
+                if st.button("Visa intresse", key=f"interest-{row['id']}"):
+                    create_interest(engine, row["id"], user["id"])
+                    st.success("Intresse skickat")
 
     st.markdown("### Skapa annons")
     item_id = st.text_input("Card instance ID")
@@ -249,6 +262,29 @@ def market_view(user):
             st.error("Kortet är låst")
         else:
             st.success("Annons skapad")
+            st.rerun()
+
+    st.markdown("### Intressen")
+    interests = list_interests_for_seller(engine, user["id"])
+    for interest in interests:
+        st.markdown(f"**{interest['buyer']}** vill köpa {interest['name']} #{interest['card_number']}")
+        if st.button("Acceptera", key=f"acc-{interest['id']}"):
+            update_interest(engine, interest["id"], user["id"], "ACCEPTED")
+            st.success("Accepterad")
+            st.rerun()
+        if st.button("Avslå", key=f"dec-{interest['id']}"):
+            update_interest(engine, interest["id"], user["id"], "DECLINED")
+            st.rerun()
+
+    st.markdown("### Transaktioner")
+    txs = list_transactions(engine, user["id"])
+    for tx in txs:
+        st.markdown(f"**{tx['name']} #{tx['card_number']}** • {tx['status']}")
+        if st.button("Markera som skickad", key=f"ship-{tx['id']}"):
+            update_transaction(engine, tx["id"], user["id"], "SHIPPED")
+            st.rerun()
+        if st.button("Markera som mottagen", key=f"recv-{tx['id']}"):
+            update_transaction(engine, tx["id"], user["id"], "COMPLETED")
             st.rerun()
 
 

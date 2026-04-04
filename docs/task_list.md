@@ -25,8 +25,8 @@
 ## Phase 3 — Market
 - [x] Listings CRUD
 - [x] Soft-lock on listing create
-- [ ] Buyer interest flow
-- [ ] Transaction checklist
+- [x] Buyer interest flow
+- [x] Transaction checklist
 
 ## Phase 4 — Social Hubb
 - [x] Group list + join
