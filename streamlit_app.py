@@ -15,6 +15,7 @@ from lib.collection import (
 from lib.pokemon_import import fetch_pokemon_card
 from lib.pokemon_api import fetch_sets, fetch_cards_page
 from lib.import_pokemon import upsert_sets, upsert_cards
+from lib.pokemon_com import import_set_from_pokemon_com
 from lib.room import get_room_items, get_available_items, place_item, clear_slot, get_user_by_username
 from lib.groups import list_groups, create_group, join_group, is_member, list_posts, create_post, delete_post
 from lib.market import (
@@ -585,6 +586,15 @@ def admin_view(user):
             cards = data.get("data", [])
             count = upsert_cards(engine, cards)
             st.success(f"Sparade {count} kort för {set_id}.")
+
+    st.divider()
+    st.subheader("Importera från pokemon.com (expansion)")
+    st.caption("Använder expansion-kod (t.ex. me01). Importerar kortens namn/bild/nummer.")
+    expansion = st.text_input("Expansion code", key="pokemoncom-exp")
+    delay = st.slider("Delay per card (sek)", min_value=0.2, max_value=2.0, value=0.4, step=0.1)
+    if st.button("Importera från pokemon.com") and expansion:
+        result = import_set_from_pokemon_com(engine, expansion, delay=delay)
+        st.success(f"Hämtade {result['links']} länkar. Sparade {result['imported']} kort.")
 
 
 def main():
