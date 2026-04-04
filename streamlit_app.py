@@ -587,6 +587,8 @@ def admin_view(user):
             count = upsert_cards(engine, cards)
             st.success(f"Sparade {count} kort för {set_id}.")
 
+    st.caption("För full import rekommenderas CLI-skriptet scripts/import_pokemon_api.py (kör lokalt).")
+
     st.divider()
     st.subheader("Importera från pokemon.com (expansion)")
     st.caption("Använder expansion-kod (t.ex. me01). Importerar kortens namn/bild/nummer.")
