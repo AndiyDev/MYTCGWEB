@@ -23,9 +23,12 @@ def _build_mysql_url():
     return f"mysql+pymysql://{user}:{password}@{host}:{port}/{name}?charset=utf8mb4"
 
 
-@st.cache_resource(show_spinner=False)
 def get_engine():
     url = os.getenv("DATABASE_URL")
     if not url:
         url = _build_mysql_url()
     return create_engine(url, pool_pre_ping=True, pool_recycle=3600)
+
+
+if st is not None:
+    get_engine = st.cache_resource(show_spinner=False)(get_engine)
