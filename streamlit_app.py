@@ -32,8 +32,25 @@ engine = get_engine()
 init_schema(engine)
 
 
+st.markdown(
+    """
+<style>
+body { background: #0b0b0f; color: #e5e7eb; }
+section[data-testid="stSidebar"] { background: #14141a; }
+.card { background: #16161d; border: 1px solid #2b2b36; padding: 12px; border-radius: 12px; }
+.section-title { font-size: 22px; font-weight: 700; margin: 10px 0; }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+
 def header():
     st.markdown("# MYTCGWEB")
+
+
+def empty_state(text: str):
+    st.markdown(f"<div class='card'>{text}</div>", unsafe_allow_html=True)
 
 
 def login_view():
@@ -92,7 +109,7 @@ def collection_view(user):
     sets = get_sets(engine, game)
 
     if not sets:
-        st.info("Inga set finns ännu. Lägg till set i Admin-sektionen.")
+        empty_state("Inga set finns ännu. Lägg till set i Admin-sektionen.")
         return
 
     progress = get_set_progress(engine, user["id"], game)
@@ -119,6 +136,10 @@ def collection_view(user):
     counts = get_user_variant_counts(engine, user["id"], selected_set_id)
 
     st.markdown("### Kort i set")
+    if not cards:
+        empty_state("Inga kort i detta set ännu.")
+        return
+
     grid = st.columns(5)
     for i, card in enumerate(cards):
         variants = []
@@ -189,6 +210,8 @@ def room_view(user):
         items_by_slot = {f"{r['slot_type']}-{r['x_pos']}-{r['y_pos']}": r for r in room_items}
 
         st.markdown("### Placera kort")
+        if not available:
+            empty_state("Inga kort att placera. Lägg till kort i Samling.")
         item_options = {f"{row['name']} #{row['card_number']}": row["item_id"] for row in available}
         slot_type = st.selectbox("Möbel", ["Wall-Left", "Wall-Right", "Center-Stand"])
         x_pos = st.number_input("X", value=1)
@@ -229,6 +252,8 @@ def market_view(user):
     listings = list_listings(engine)
 
     st.markdown("### Aktiva annonser")
+    if not listings:
+        empty_state("Inga annonser just nu.")
     cols = st.columns(3)
     for i, row in enumerate(listings):
         with cols[i % 3]:
@@ -266,6 +291,8 @@ def market_view(user):
 
     st.markdown("### Intressen")
     interests = list_interests_for_seller(engine, user["id"])
+    if not interests:
+        st.caption("Inga intressen ännu.")
     for interest in interests:
         st.markdown(f"**{interest['buyer']}** vill köpa {interest['name']} #{interest['card_number']}")
         if st.button("Acceptera", key=f"acc-{interest['id']}"):
@@ -278,6 +305,8 @@ def market_view(user):
 
     st.markdown("### Transaktioner")
     txs = list_transactions(engine, user["id"])
+    if not txs:
+        st.caption("Inga transaktioner ännu.")
     for tx in txs:
         st.markdown(f"**{tx['name']} #{tx['card_number']}** • {tx['status']}")
         if st.button("Markera som skickad", key=f"ship-{tx['id']}"):
@@ -295,6 +324,8 @@ def groups_view(user):
     with left:
         st.markdown("### Grupper")
         groups = list_groups(engine)
+        if not groups:
+            empty_state("Inga grupper än. Skapa en ny.")
         for g in groups:
             col = st.columns([3, 1, 1])
             with col[0]:
@@ -338,6 +369,8 @@ def groups_view(user):
                     continue
                 category = categories.get(tab.label)
                 posts = list_posts(engine, group_id, category)
+                if not posts:
+                    st.caption("Inga inlägg ännu.")
                 for post in posts:
                     st.markdown(f"**{post['username']}** • {post['created_at']}")
                     st.write(post["content"])

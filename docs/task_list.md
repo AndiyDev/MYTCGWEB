@@ -40,6 +40,6 @@
 - [x] Public profile view
 
 ## Phase 6 — Polish
-- [ ] Full UI theme
-- [ ] Performance pass
-- [ ] Error states + empty states
+- [x] Full UI theme
+- [x] Performance pass
+- [x] Error states + empty states
