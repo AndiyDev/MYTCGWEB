@@ -122,12 +122,25 @@ DEPENDENT_TABLES = [
         owner_id CHAR(36) NOT NULL,
         item_id CHAR(36) NOT NULL,
         slot_type VARCHAR(32),
+        furniture_id CHAR(36),
         x_pos FLOAT,
         y_pos FLOAT,
         rotation FLOAT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (item_id) REFERENCES card_instances(id) ON DELETE CASCADE
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS room_furniture (
+        id CHAR(36) PRIMARY KEY,
+        owner_id CHAR(36) NOT NULL,
+        type VARCHAR(32) NOT NULL,
+        x_pos FLOAT,
+        y_pos FLOAT,
+        rotation FLOAT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
     ) """ + TABLE_OPTIONS + """;
     """,
     """
@@ -250,6 +263,18 @@ FALLBACK_TABLES = {
         owner_id CHAR(36) NOT NULL,
         item_id CHAR(36) NOT NULL,
         slot_type VARCHAR(32),
+        furniture_id CHAR(36),
+        x_pos FLOAT,
+        y_pos FLOAT,
+        rotation FLOAT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    "room_furniture": """
+    CREATE TABLE IF NOT EXISTS room_furniture (
+        id CHAR(36) PRIMARY KEY,
+        owner_id CHAR(36) NOT NULL,
+        type VARCHAR(32) NOT NULL,
         x_pos FLOAT,
         y_pos FLOAT,
         rotation FLOAT,
@@ -336,6 +361,7 @@ ALTER_SQL = [
     "ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP NULL",
     "ALTER TABLE card_instances ADD COLUMN purchase_price DECIMAL(12,2) DEFAULT 0",
     "ALTER TABLE card_instances ADD COLUMN purchase_date DATE NULL",
+    "ALTER TABLE room_items ADD COLUMN furniture_id CHAR(36)",
 ]
 
 

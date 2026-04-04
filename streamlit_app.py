@@ -29,7 +29,16 @@ from lib.sealed import (
     get_cards_by_numbers,
 )
 from lib.sealed_scrape import scrape_featured_products
-from lib.room import get_room_items, get_available_items, place_item, clear_slot, get_user_by_username
+from lib.room import (
+    get_room_items,
+    get_available_items,
+    place_item,
+    clear_slot,
+    get_user_by_username,
+    get_furniture,
+    add_furniture,
+    remove_furniture,
+)
 from lib.groups import list_groups, create_group, join_group, is_member, list_posts, create_post, delete_post
 from lib.market import (
     list_listings,
@@ -147,6 +156,21 @@ input, textarea, select { border-radius: 10px !important; }
 .pack-title { font-size: 0.85rem; color: var(--muted); }
 .animate-card { animation: flyout 0.6s ease forwards; }
 @keyframes flyout { from { transform: translateY(-10px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+.room-wrap { perspective: 900px; background: #0b0b10; padding: 20px; border-radius: 18px; border: 1px solid #1f1f2a; }
+.room { position: relative; height: 360px; background: #0f1016; border-radius: 14px; overflow: hidden; }
+.room-wall { position: absolute; background: #121621; border: 1px solid #1f1f2a; }
+.wall-left { width: 40%; height: 100%; left: 0; transform: skewY(-2deg); }
+.wall-right { width: 40%; height: 100%; right: 0; transform: skewY(2deg); }
+.wall-back { width: 20%; height: 100%; left: 40%; background: #0e111a; }
+.room-floor { position: absolute; bottom: 0; left: 0; right: 0; height: 35%; background: linear-gradient(180deg, #10131b, #0b0b10); }
+.room-ceil { position: absolute; top: 0; left: 0; right: 0; height: 12%; background: #0c0c12; opacity: 0.8; }
+.furniture { position: absolute; background: #1a1c26; border: 1px solid #2b2b36; border-radius: 8px; }
+.furniture.shelf { width: 120px; height: 12px; }
+.furniture.table { width: 140px; height: 18px; }
+.furniture.stand { width: 50px; height: 50px; }
+.room-card { position: absolute; width: 48px; }
+.room-card img { width: 100%; border-radius: 6px; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -414,50 +438,61 @@ def collection_view(user):
                 st.rerun()
 
 
-def render_room_grid(items_by_slot, slots, title):
-    st.markdown(f"### {title}")
-    cols = st.columns(len(slots))
-    for idx, slot in enumerate(slots):
-        with cols[idx]:
-            item = items_by_slot.get(slot)
-            if item:
-                st.image(item["image_url"], use_column_width=True)
-                st.caption(f"{item['name']} #{item['card_number']}")
-            else:
-                st.markdown("<div style='height:120px; border:1px dashed #333; border-radius:8px;'></div>", unsafe_allow_html=True)
-            st.caption(f"Slot {slot}")
+def render_room_view(furniture, items):
+    html = ["<div class='room-wrap'><div class='room'>"]
+    html.append("<div class='room-ceil'></div>")
+    html.append("<div class='room-wall wall-left'></div>")
+    html.append("<div class='room-wall wall-back'></div>")
+    html.append("<div class='room-wall wall-right'></div>")
+    html.append("<div class='room-floor'></div>")
+
+    for f in furniture:
+        fclass = "shelf" if f["type"] == "SHELF" else "table" if f["type"] == "TABLE" else "stand"
+        html.append(
+            f"<div class='furniture {fclass}' style='left:{f['x_pos']}%; top:{f['y_pos']}%;'></div>"
+        )
+
+    for i in items:
+        html.append(
+            f"<div class='room-card' style='left:{i['x_pos']}%; top:{i['y_pos']}%;'>"
+            f"<img src='{i['image_url']}' />"
+            f"</div>"
+        )
+
+    html.append("</div></div>")
+    st.markdown("".join(html), unsafe_allow_html=True)
 
 
 def room_view(user):
     st.markdown("## Mitt Rum")
     tabs = st.tabs(["Min room", "Profilvy"])
     with tabs[0]:
-        available = get_available_items(engine, user["id"])
+        furniture = get_furniture(engine, user["id"])
         room_items = get_room_items(engine, user["id"], public_only=False)
-        items_by_slot = {f"{r['slot_type']}-{r['x_pos']}-{r['y_pos']}": r for r in room_items}
+        render_room_view(furniture, room_items)
 
-        st.markdown("### Placera kort")
+        st.markdown("### Lägg till möbel")
+        f_type = st.selectbox("Möbeltyp", ["SHELF", "TABLE", "STAND"])
+        fx = st.slider("X (%)", 0, 90, 10)
+        fy = st.slider("Y (%)", 0, 90, 60)
+        if st.button("Placera möbel"):
+            add_furniture(engine, user["id"], f_type, fx, fy)
+            st.rerun()
+
+        st.markdown("### Placera kort på möbel")
+        available = get_available_items(engine, user["id"])
         if not available:
             empty_state("Inga kort att placera. Lägg till kort i Samling.")
         item_options = {f"{row['name']} #{row['card_number']}": row["item_id"] for row in available}
-        slot_type = st.selectbox("Möbel", ["Wall-Left", "Wall-Right", "Center-Stand"])
-        x_pos = st.number_input("X", value=1)
-        y_pos = st.number_input("Y", value=1)
-        selected_item = st.selectbox("Kort", ["--" ] + list(item_options.keys()))
-
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Placera") and selected_item != "--":
-                place_item(engine, user["id"], item_options[selected_item], slot_type, x_pos, y_pos)
-                st.rerun()
-        with col2:
-            if st.button("Ta bort från slot"):
-                clear_slot(engine, user["id"], slot_type, x_pos, y_pos)
-                st.rerun()
-
-        render_room_grid(items_by_slot, ["Wall-Left-1-1", "Wall-Left-2-1", "Wall-Left-3-1"], "Vänster vägg")
-        render_room_grid(items_by_slot, ["Center-Stand-1-1", "Center-Stand-2-1", "Center-Stand-3-1"], "Ställ i mitten")
-        render_room_grid(items_by_slot, ["Wall-Right-1-1", "Wall-Right-2-1", "Wall-Right-3-1"], "Höger vägg")
+        furniture_options = {f"{f['type']} ({f['id']})": f["id"] for f in furniture}
+        selected_item = st.selectbox("Kort", ["--"] + list(item_options.keys()))
+        selected_furn = st.selectbox("Möbel", ["--"] + list(furniture_options.keys()))
+        cx = st.slider("Kort X (%)", 0, 90, 30)
+        cy = st.slider("Kort Y (%)", 0, 90, 40)
+        if st.button("Placera kort") and selected_item != "--":
+            fid = furniture_options.get(selected_furn) if selected_furn != "--" else None
+            place_item(engine, user["id"], item_options[selected_item], "ROOM", cx, cy, furniture_id=fid)
+            st.rerun()
 
     with tabs[1]:
         st.markdown("### Publik profil")
@@ -468,10 +503,13 @@ def room_view(user):
                 st.error("Ingen användare hittades")
             else:
                 public_items = get_room_items(engine, user_row["id"], public_only=True)
-                items_by_slot = {f"{r['slot_type']}-{r['x_pos']}-{r['y_pos']}": r for r in public_items}
-                render_room_grid(items_by_slot, ["Wall-Left-1-1", "Wall-Left-2-1", "Wall-Left-3-1"], "Vänster vägg")
-                render_room_grid(items_by_slot, ["Center-Stand-1-1", "Center-Stand-2-1", "Center-Stand-3-1"], "Ställ i mitten")
-                render_room_grid(items_by_slot, ["Wall-Right-1-1", "Wall-Right-2-1", "Wall-Right-3-1"], "Höger vägg")
+                furniture = get_furniture(engine, user_row["id"])
+                render_room_view(furniture, public_items)
+
+                st.markdown("### Kort i rummet")
+                for c in public_items:
+                    if st.button(f"{c['name']} #{c['card_number']}", key=f"pub-{c['room_item_id']}"):
+                        st.session_state["open_card"] = {**c, "variant": "Normal", "count": 0}
 
 
 def market_view(user):

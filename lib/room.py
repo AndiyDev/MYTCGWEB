@@ -15,7 +15,7 @@ def get_room_items(engine, owner_id: str, public_only: bool = False):
         rows = conn.execute(
             text(
                 """
-                SELECT ri.id AS room_item_id, ri.slot_type, ri.x_pos, ri.y_pos, ri.rotation,
+                SELECT ri.id AS room_item_id, ri.slot_type, ri.furniture_id, ri.x_pos, ri.y_pos, ri.rotation,
                        ci.id AS item_id, ci.is_public, c.name, c.card_number, c.image_url
                 FROM room_items ri
                 JOIN card_instances ci ON ci.id = ri.item_id
@@ -26,6 +26,43 @@ def get_room_items(engine, owner_id: str, public_only: bool = False):
             {"oid": owner_id},
         ).mappings().all()
     return rows
+
+
+def get_furniture(engine, owner_id: str):
+    with engine.begin() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, type, x_pos, y_pos, rotation
+                FROM room_furniture
+                WHERE owner_id=:oid
+                ORDER BY created_at DESC
+                """
+            ),
+            {"oid": owner_id},
+        ).mappings().all()
+    return rows
+
+
+def add_furniture(engine, owner_id: str, type_label: str, x_pos: float, y_pos: float, rotation: float = 0.0):
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO room_furniture (id, owner_id, type, x_pos, y_pos, rotation)
+                VALUES (UUID(), :oid, :t, :x, :y, :r)
+                """
+            ),
+            {"oid": owner_id, "t": type_label, "x": x_pos, "y": y_pos, "r": rotation},
+        )
+
+
+def remove_furniture(engine, owner_id: str, furniture_id: str):
+    with engine.begin() as conn:
+        conn.execute(
+            text("DELETE FROM room_furniture WHERE id=:id AND owner_id=:oid"),
+            {"id": furniture_id, "oid": owner_id},
+        )
 
 
 def get_available_items(engine, owner_id: str):
@@ -46,7 +83,7 @@ def get_available_items(engine, owner_id: str):
     return rows
 
 
-def place_item(engine, owner_id: str, item_id: str, slot_type: str, x_pos: float, y_pos: float, rotation: float = 0.0):
+def place_item(engine, owner_id: str, item_id: str, slot_type: str, x_pos: float, y_pos: float, rotation: float = 0.0, furniture_id: str | None = None):
     with engine.begin() as conn:
         owner = conn.execute(
             text("SELECT owner_id FROM card_instances WHERE id=:id"),
@@ -68,11 +105,11 @@ def place_item(engine, owner_id: str, item_id: str, slot_type: str, x_pos: float
         conn.execute(
             text(
                 """
-                INSERT INTO room_items (id, owner_id, item_id, slot_type, x_pos, y_pos, rotation)
-                VALUES (UUID(), :oid, :iid, :s, :x, :y, :r)
+                INSERT INTO room_items (id, owner_id, item_id, slot_type, furniture_id, x_pos, y_pos, rotation)
+                VALUES (UUID(), :oid, :iid, :s, :fid, :x, :y, :r)
                 """
             ),
-            {"oid": owner_id, "iid": item_id, "s": slot_type, "x": x_pos, "y": y_pos, "r": rotation},
+            {"oid": owner_id, "iid": item_id, "s": slot_type, "fid": furniture_id, "x": x_pos, "y": y_pos, "r": rotation},
         )
     return True
 
