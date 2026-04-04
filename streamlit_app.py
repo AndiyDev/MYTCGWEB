@@ -67,6 +67,12 @@ body {
   color: var(--text);
 }
 section[data-testid="stSidebar"] { background: #12121a; border-right: 1px solid var(--stroke); }
+section[data-testid="stSidebar"] .stRadio > div { gap: 0.35rem; }
+section[data-testid="stSidebar"] label { color: var(--text) !important; }
+section[data-testid="stSidebar"] .stButton > button { width: 100%; }
+section[data-testid="stSidebar"] .sidebar-card { background: #171725; border: 1px solid var(--stroke); padding: 12px; border-radius: 14px; }
+section[data-testid="stSidebar"] .sidebar-title { font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+
 div[data-testid="stVerticalBlock"] { gap: 1rem; }
 
 .card { background: var(--panel); border: 1px solid var(--stroke); padding: 14px; border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.3); }
@@ -210,9 +216,17 @@ def collection_view(user):
         return
 
     cards = cached_cards(selected_set_id)
+    cards = sorted(cards, key=lambda c: int(c["card_number"]) if str(c["card_number"]).isdigit() else 999999)
     counts = get_user_variant_counts(engine, user["id"], selected_set_id)
 
     st.markdown("### Kort i set")
+    search = st.text_input("Sök kort (namn eller nummer)")
+    if search:
+        needle = search.strip().lower()
+        cards = [
+            c for c in cards
+            if needle in str(c["name"]).lower() or needle in str(c["card_number"]).lower()
+        ]
     if not cards:
         empty_state("Inga kort i detta set ännu.")
         return
@@ -647,15 +661,21 @@ def main():
         return
 
     with st.sidebar:
-        st.write(f"Inloggad: {user['username']}")
+        st.markdown("<div class='sidebar-card'>", unsafe_allow_html=True)
+        st.markdown("<div class='sidebar-title'>Inloggad</div>", unsafe_allow_html=True)
+        st.markdown(f"**{user['username']}**")
         if st.button("Logga ut"):
             logout_user()
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
+        st.markdown("<div class='sidebar-card' style='margin-top:12px;'>", unsafe_allow_html=True)
+        st.markdown("<div class='sidebar-title'>Navigering</div>", unsafe_allow_html=True)
         pages = ["Samling", "Marknad", "Social Hubb", "Mitt Rum"]
         if require_admin(user):
             pages.append("Admin")
         page = st.radio("Navigering", pages)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     if page == "Samling":
         collection_view(user)
