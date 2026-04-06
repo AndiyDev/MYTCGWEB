@@ -609,7 +609,7 @@ def collection_view(user):
                 )
                 action_cols = st.columns(3)
                 with action_cols[0]:
-                    if st.button("Info", key=f"info-{card['id']}-{variant}"):
+                    if st.button("ℹ", key=f"info-{card['id']}-{variant}"):
                         st.session_state["open_card"] = {**card, "variant": variant, "count": count}
                 with action_cols[1]:
                     if st.button("−", key=f"rem-{card['id']}-{variant}"):
