@@ -166,6 +166,7 @@ DEPENDENT_TABLES = [
         state VARCHAR(16) DEFAULT 'SEALED',
         opened_at TIMESTAMP NULL,
         notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
     ) """ + TABLE_OPTIONS + """;
     """,
@@ -303,7 +304,8 @@ FALLBACK_TABLES = {
         purchase_date DATE NULL,
         state VARCHAR(16) DEFAULT 'SEALED',
         opened_at TIMESTAMP NULL,
-        notes TEXT
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) """ + TABLE_OPTIONS + """;
     """,
     "booster_openings": """
@@ -362,6 +364,7 @@ ALTER_SQL = [
     "ALTER TABLE card_instances ADD COLUMN purchase_price DECIMAL(12,2) DEFAULT 0",
     "ALTER TABLE card_instances ADD COLUMN purchase_date DATE NULL",
     "ALTER TABLE room_items ADD COLUMN furniture_id CHAR(36)",
+    "ALTER TABLE sealed_instances ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
 ]
 
 
