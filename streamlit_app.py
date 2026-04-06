@@ -1034,22 +1034,33 @@ def main():
         pages = ["Samling", "Sealed", "Marknad", "Social Hubb", "Mitt Rum", "Budget"]
         if require_admin(user):
             pages.append("Admin")
-        page = st.radio("Navigering", pages)
+        icons = {
+            "Samling": "🗂",
+            "Sealed": "📦",
+            "Marknad": "🏷",
+            "Social Hubb": "💬",
+            "Mitt Rum": "🏠",
+            "Budget": "📊",
+            "Admin": "🛠",
+        }
+        page = st.radio("Navigering", [f"{icons[p]} {p}" for p in pages])
         st.markdown("</div>", unsafe_allow_html=True)
 
-    if page == "Samling":
+    page_label = page.split(" ", 1)[1] if " " in page else page
+
+    if page_label == "Samling":
         collection_view(user)
-    elif page == "Sealed":
+    elif page_label == "Sealed":
         sealed_view(user)
-    elif page == "Marknad":
+    elif page_label == "Marknad":
         market_view(user)
-    elif page == "Social Hubb":
+    elif page_label == "Social Hubb":
         groups_view(user)
-    elif page == "Mitt Rum":
+    elif page_label == "Mitt Rum":
         room_view(user)
-    elif page == "Budget":
+    elif page_label == "Budget":
         budget_view(user)
-    elif page == "Admin":
+    elif page_label == "Admin":
         admin_view(user)
 
 
