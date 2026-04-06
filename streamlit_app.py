@@ -607,24 +607,8 @@ def collection_view(user):
                     f"<div class='meta'>{variant} • <span class='value'>{str(count).zfill(2)}</span></div>",
                     unsafe_allow_html=True,
                 )
-                action_cols = st.columns(3)
-                with action_cols[0]:
-                    if st.button("Info", key=f"info-{card['id']}-{variant}"):
-                        st.session_state["open_card"] = {**card, "variant": variant, "count": count}
-                with action_cols[1]:
-                    if st.button("-", key=f"rem-{card['id']}-{variant}"):
-                        if not remove_instance(engine, user["id"], card["id"], variant):
-                            st.warning("Kortet är låst eller saknas.")
-                        cached_cards.clear()
-                        cached_progress.clear()
-                        st.rerun()
-                with action_cols[2]:
-                    if st.button("+", key=f"add-{card['id']}-{variant}"):
-                        if not add_instance(engine, user["id"], card["id"], variant, "Near Mint", 0.0):
-                            st.warning("Den varianten finns inte.")
-                        cached_cards.clear()
-                        cached_progress.clear()
-                        st.rerun()
+                if st.button("Öppna", key=f"info-{card['id']}-{variant}", use_container_width=True):
+                    st.session_state["open_card"] = {**card, "variant": variant, "count": count}
                 st.markdown("</div>", unsafe_allow_html=True)
     if total_cards > len(cards):
         if st.button("Visa fler kort"):
