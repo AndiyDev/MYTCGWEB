@@ -312,6 +312,30 @@ div[data-testid="stSelectbox"] > div {
   background: #101018;
 }
 
+.mobile-only { display: none; }
+
+@media (max-width: 900px) {
+  .top-bar { flex-direction: column; align-items: flex-start; }
+  .collection-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .set-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .set-hero { grid-template-columns: 1fr; }
+  .set-hero-logo { min-height: 90px; }
+  section[data-testid="stSidebar"] .sidebar-card { padding: 10px; }
+  .card-item { padding: 10px; }
+  .card-item .name { font-size: 0.85rem; }
+  .detail-title { font-size: 1.05rem; }
+  .tabs { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+@media (max-width: 640px) {
+  .collection-grid { grid-template-columns: repeat(2, 1fr); }
+  .set-grid { grid-template-columns: repeat(2, 1fr); }
+  .set-tile { min-height: 160px; }
+  .set-hero { padding: 14px; }
+  .card { padding: 12px; }
+  .top-title { font-size: 1.3rem; }
+  section[data-testid="stSidebar"] { min-width: 240px; }
+}
 .top-bar {
   display: flex;
   align-items: center;
