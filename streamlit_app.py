@@ -261,7 +261,7 @@ div[data-testid="stSelectbox"] > div {
 .animate-card { animation: flyout 0.6s ease forwards; }
 @keyframes flyout { from { transform: translateY(-10px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
-.set-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.set-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .set-tile {
   background: linear-gradient(180deg, #13131b 0%, #0d0d14 100%);
   border: 1px solid #1f1f2d;
@@ -283,7 +283,7 @@ div[data-testid="stSelectbox"] > div {
   align-items: center;
   justify-content: center;
 }
-.set-media img { max-height: 90px; object-fit: contain; }
+.set-media img { max-height: 70px; width: 100%; object-fit: contain; }
 .set-meta { display: flex; justify-content: space-between; align-items: center; }
 .set-name { font-weight: 600; font-size: 0.95rem; }
 .set-progress { color: var(--muted); font-size: 0.85rem; }
@@ -521,9 +521,9 @@ def collection_view(user):
             needle = set_search.strip().lower()
             sets = [s for s in sets if needle in s["set_name"].lower()]
 
-        set_cols = st.columns(2)
+        set_cols = st.columns(3)
         for idx, s in enumerate(sets):
-            with set_cols[idx % 2]:
+            with set_cols[idx % 3]:
                 render_set_tile(s, progress.get(s["id"], 0), s["total_cards"])
                 if st.button("Öppna set", key=f"open-set-{s['id']}", use_container_width=True, type="primary"):
                     st.session_state["selected_set_id"] = s["id"]
