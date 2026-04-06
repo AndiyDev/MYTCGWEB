@@ -96,6 +96,14 @@ section[data-testid="stSidebar"] label { color: var(--text) !important; }
 section[data-testid="stSidebar"] .stButton > button { width: 100%; }
 section[data-testid="stSidebar"] .sidebar-card { background: #171725; border: 1px solid var(--stroke); padding: 12px; border-radius: 14px; }
 section[data-testid="stSidebar"] .sidebar-title { font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+section[data-testid="stSidebar"] .sidebar-brand { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.04em; margin-bottom: 10px; }
+section[data-testid="stSidebar"] .sidebar-user { display:flex; align-items:center; gap:10px; }
+section[data-testid="stSidebar"] .avatar { width: 36px; height: 36px; border-radius: 999px; background: #1f2230; border: 1px solid #2b2f3d; display:flex; align-items:center; justify-content:center; color: #7ef6da; font-weight:700; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label { padding: 8px; border-radius: 12px; background: #14141f; border: 1px solid transparent; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label > div { padding-left: 0; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label input { display: none; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label input:checked + div { background: #1b1b2a; border-radius: 10px; padding: 8px 10px; border: 1px solid #2e2e3d; color: #ffffff; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover { border-color: #2a2a3a; }
 
 div[data-testid="stVerticalBlock"] { gap: 1rem; }
 
@@ -1011,9 +1019,11 @@ def main():
         return
 
     with st.sidebar:
+        st.markdown("<div class='sidebar-brand'>CollectorHub</div>", unsafe_allow_html=True)
         st.markdown("<div class='sidebar-card'>", unsafe_allow_html=True)
         st.markdown("<div class='sidebar-title'>Inloggad</div>", unsafe_allow_html=True)
-        st.markdown(f"**{user['username']}**")
+        initials = user["username"][:1].upper()
+        st.markdown(f"<div class='sidebar-user'><div class='avatar'>{initials}</div><div><strong>{user['username']}</strong></div></div>", unsafe_allow_html=True)
         if st.button("Logga ut"):
             logout_user()
             st.rerun()
