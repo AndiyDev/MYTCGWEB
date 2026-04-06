@@ -201,7 +201,7 @@ div[data-testid="stSelectbox"] > div {
 
 .muted { color: var(--muted); }
 
-.collection-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(210px,1fr)); gap: 16px; }
+.collection-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap: 14px; }
 .card-item {
   background: linear-gradient(180deg, #12121a 0%, #0d0d14 100%);
   border: 1px solid #1f1f2d;
@@ -536,7 +536,6 @@ def collection_view(user):
     if total_count:
         st.caption(f"{owned_count}/{total_count} kort i setet")
         st.progress(min(owned_count / max(total_count, 1), 1.0))
-    filter_variants = st.multiselect("Filter", ["Normal", "Holofoil", "Reverse Holo"], default=["Normal", "Holofoil", "Reverse Holo"])
     if search:
         needle = search.strip().lower()
         cards = [
@@ -565,8 +564,6 @@ def collection_view(user):
         for variant in variants:
             count = counts.get(card["id"], {}).get(variant, 0)
             dim = count == 0
-            if variant not in filter_variants:
-                continue
             st.markdown("<div class='card-item'>", unsafe_allow_html=True)
             st.markdown(f"<div class='name'>#{card['card_number']} {card['name']}</div>", unsafe_allow_html=True)
             if card.get("rarity"):
