@@ -513,20 +513,13 @@ def collection_view(user):
             needle = set_search.strip().lower()
             sets = [s for s in sets if needle in s["set_name"].lower()]
 
-        page_size = 36
-        page = st.session_state.get("set_page", 1)
-        visible = sets[: page * page_size]
-        set_cols = st.columns(4)
-        for idx, s in enumerate(visible):
-            with set_cols[idx % 4]:
+        set_cols = st.columns(2)
+        for idx, s in enumerate(sets):
+            with set_cols[idx % 2]:
                 render_set_tile(s, progress.get(s["id"], 0), s["total_cards"])
                 if st.button("Öppna set", key=f"open-set-{s['id']}", use_container_width=True, type="primary"):
                     st.session_state["selected_set_id"] = s["id"]
                     st.rerun()
-        if len(sets) > len(visible):
-            if st.button("Visa fler set"):
-                st.session_state["set_page"] = page + 1
-                st.rerun()
         return
 
     cards = cached_cards(selected_set_id)
