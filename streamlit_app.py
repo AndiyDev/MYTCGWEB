@@ -201,7 +201,7 @@ div[data-testid="stSelectbox"] > div {
 
 .muted { color: var(--muted); }
 
-.collection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .card-item {
   background: linear-gradient(180deg, #12121a 0%, #0d0d14 100%);
   border: 1px solid #1f1f2d;
@@ -316,7 +316,7 @@ div[data-testid="stSelectbox"] > div {
 .top-bar { flex-direction: column; align-items: flex-start; }
 .set-hero-logo { min-height: 90px; }
 section[data-testid="stSidebar"] .sidebar-card { padding: 10px; }
-.card-item { padding: 10px; }
+.card-item { padding: 8px; }
 .card-item .name { font-size: 0.85rem; }
 .detail-title { font-size: 1.05rem; }
 .tabs { grid-template-columns: 1fr 1fr 1fr; }
