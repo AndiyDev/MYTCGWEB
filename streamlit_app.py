@@ -220,6 +220,8 @@ div[data-testid="stSelectbox"] > div {
 }
 .card-item .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
 .card-item .meta { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+.card-item .rarity { margin-top: 6px; }
+.card-item .card-img img { width: 100%; height: auto; }
 .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--stroke); font-size: 0.75rem; color: var(--muted); }
 .value { font-weight: 700; font-size: 1.15rem; }
 
@@ -275,6 +277,40 @@ div[data-testid="stSelectbox"] > div {
 .set-meta { display: flex; justify-content: space-between; align-items: center; }
 .set-name { font-weight: 600; font-size: 0.95rem; }
 .set-progress { color: var(--muted); font-size: 0.85rem; }
+
+.set-hero {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid #1f1f2d;
+  background: linear-gradient(120deg, rgba(18,18,26,0.95), rgba(10,10,15,0.95));
+  box-shadow: var(--glow);
+  margin-bottom: 12px;
+}
+.set-hero-logo {
+  background: #0b0b10;
+  border: 1px solid #1f1f2d;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  min-height: 110px;
+}
+.set-hero-logo img { max-width: 120px; max-height: 90px; object-fit: contain; }
+.set-hero-title { font-size: 1.4rem; font-weight: 700; }
+.set-hero-sub { color: var(--muted); margin-top: 4px; }
+.set-hero-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+.chip {
+  border: 1px solid #262636;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: #101018;
+}
 
 .top-bar {
   display: flex;
@@ -395,7 +431,7 @@ def render_set_tile(set_row, owned: int, total: int):
           <div class='set-media'>{logo_html or set_row['set_name']}</div>
           <div class='set-meta'>
             <div class='set-name'>{set_row['set_name']}</div>
-            <div class='set-progress'>{str(owned).zfill(3)}/{str(total).zfill(3)}</div>
+            <div class='set-progress'>{owned}/{total}</div>
           </div>
           <div>{symbol_html}</div>
         </div>
@@ -477,8 +513,24 @@ def collection_view(user):
     counts = cached_variant_counts(user["id"], selected_set_id)
 
     selected_set = set_map.get(selected_set_id, {})
-    if selected_set.get("logo_path"):
-        st.image(selected_set["logo_path"], width=260)
+    logo = selected_set.get("logo_path") or ""
+    logo_html = f"<img src='{logo}' alt='logo'/>" if logo else ""
+    st.markdown(
+        f"""
+        <div class='set-hero'>
+          <div class='set-hero-logo'>{logo_html or selected_set.get('set_name','')}</div>
+          <div>
+            <div class='set-hero-title'>{selected_set.get('set_name','')}</div>
+            <div class='set-hero-sub'>{selected_set.get('series','')}</div>
+            <div class='set-hero-row'>
+              <div class='chip'>{selected_set.get('total_cards', 0)} kort</div>
+              <div class='chip'>Pokémon</div>
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     owned_count = progress.get(selected_set_id, 0)
     total_count = selected_set.get("total_cards", 0)
     if total_count:
@@ -517,6 +569,8 @@ def collection_view(user):
                 continue
             st.markdown("<div class='card-item'>", unsafe_allow_html=True)
             st.markdown(f"<div class='name'>#{card['card_number']} {card['name']}</div>", unsafe_allow_html=True)
+            if card.get("rarity"):
+                st.markdown(f"<div class='rarity badge'>{card['rarity']}</div>", unsafe_allow_html=True)
             if card["image_url"]:
                 st.markdown("<div class='card-img'>", unsafe_allow_html=True)
                 render_card_image(card["image_url"], dim)
