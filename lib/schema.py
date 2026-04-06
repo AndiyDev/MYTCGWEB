@@ -81,6 +81,25 @@ DEPENDENT_TABLES = [
     ) """ + TABLE_OPTIONS + """;
     """,
     """
+    CREATE TABLE IF NOT EXISTS interests (
+        id CHAR(36) PRIMARY KEY,
+        listing_id CHAR(36) NOT NULL,
+        buyer_id CHAR(36) NOT NULL,
+        status VARCHAR(16) DEFAULT 'PENDING',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS transactions (
+        id CHAR(36) PRIMARY KEY,
+        buyer_id CHAR(36) NOT NULL,
+        seller_id CHAR(36) NOT NULL,
+        item_id CHAR(36) NOT NULL,
+        status VARCHAR(16) DEFAULT 'PENDING',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    """
     CREATE TABLE IF NOT EXISTS groups (
         id CHAR(36) PRIMARY KEY,
         name VARCHAR(128) NOT NULL,
@@ -255,6 +274,25 @@ FALLBACK_TABLES = {
         currency VARCHAR(8) DEFAULT 'SEK',
         notes TEXT,
         status VARCHAR(16) DEFAULT 'DRAFT',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    "interests": """
+    CREATE TABLE IF NOT EXISTS interests (
+        id CHAR(36) PRIMARY KEY,
+        listing_id CHAR(36) NOT NULL,
+        buyer_id CHAR(36) NOT NULL,
+        status VARCHAR(16) DEFAULT 'PENDING',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) """ + TABLE_OPTIONS + """;
+    """,
+    "transactions": """
+    CREATE TABLE IF NOT EXISTS transactions (
+        id CHAR(36) PRIMARY KEY,
+        buyer_id CHAR(36) NOT NULL,
+        seller_id CHAR(36) NOT NULL,
+        item_id CHAR(36) NOT NULL,
+        status VARCHAR(16) DEFAULT 'PENDING',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) """ + TABLE_OPTIONS + """;
     """,
