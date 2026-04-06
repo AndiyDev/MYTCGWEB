@@ -297,22 +297,32 @@ def collection_view(user):
     progress = cached_progress(user["id"], game)
     set_map = {s["id"]: s for s in sets}
 
-    if st.session_state.get("selected_set_id"):
+    selected_set_id = st.session_state.get("selected_set_id")
+    if selected_set_id:
         if st.button("Tillbaka till set"):
             st.session_state.pop("selected_set_id")
             st.rerun()
+    else:
+        set_search = st.text_input("Sök set")
+        if set_search:
+            needle = set_search.strip().lower()
+            sets = [s for s in sets if needle in s["set_name"].lower()]
 
-    set_cols = st.columns(4)
-    selected_set_id = st.session_state.get("selected_set_id")
-    for idx, s in enumerate(sets):
-        with set_cols[idx % 4]:
-            clicked = st.button(s["set_name"], use_container_width=True)
-            render_set_tile(s, progress.get(s["id"], 0), s["total_cards"])
-            if clicked:
-                st.session_state["selected_set_id"] = s["id"]
+        page_size = 40
+        page = st.session_state.get("set_page", 1)
+        visible = sets[: page * page_size]
+        set_cols = st.columns(4)
+        for idx, s in enumerate(visible):
+            with set_cols[idx % 4]:
+                clicked = st.button(s["set_name"], use_container_width=True)
+                render_set_tile(s, progress.get(s["id"], 0), s["total_cards"])
+                if clicked:
+                    st.session_state["selected_set_id"] = s["id"]
+                    st.rerun()
+        if len(sets) > len(visible):
+            if st.button("Visa fler set"):
+                st.session_state["set_page"] = page + 1
                 st.rerun()
-
-    if not selected_set_id:
         return
 
     cards = cached_cards(selected_set_id)

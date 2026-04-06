@@ -22,7 +22,7 @@ def get_set_progress(engine, user_id: str, game: str):
         rows = conn.execute(
             text(
                 """
-                SELECT s.id AS set_id, COUNT(DISTINCT c.id) AS owned
+                SELECT s.id AS set_id, COUNT(DISTINCT ci.card_id) AS owned
                 FROM tcg_sets s
                 LEFT JOIN tcg_cards c ON c.set_id = s.id
                 LEFT JOIN card_instances ci ON ci.card_id = c.id AND ci.owner_id = :uid
