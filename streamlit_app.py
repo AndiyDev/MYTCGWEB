@@ -79,7 +79,7 @@ st.markdown(
   --panel: #13131a;
   --panel-2: #0f0f15;
   --panel-3: #0d0d12;
-  --stroke: #222230;
+  --stroke: #20202b;
   --accent: #62f2d2;
   --accent-2: #3cc2ff;
   --accent-3: #ffb347;
@@ -201,24 +201,24 @@ div[data-testid="stSelectbox"] > div {
 
 .muted { color: var(--muted); }
 
-.collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .card-item {
-  background: linear-gradient(180deg, #12121a 0%, #0d0d14 100%);
-  border: 1px solid #1f1f2d;
-  border-radius: 18px;
-  padding: 12px;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.35);
-  transition: transform 0.2s ease, border 0.2s ease;
+  background: #0f1016;
+  border: 1px solid #1c1c28;
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+  transition: transform 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
 }
-.card-item:hover { transform: translateY(-2px); border-color: rgba(98,242,210,0.25); }
+.card-item:hover { transform: translateY(-2px); border-color: rgba(98,242,210,0.25); box-shadow: 0 16px 30px rgba(0,0,0,0.35); }
 .card-item .card-img {
   background: #0b0b10;
-  border: 1px solid #1f1f2d;
-  border-radius: 14px;
-  padding: 8px;
-  margin-bottom: 10px;
+  border: 1px solid #1a1a26;
+  border-radius: 12px;
+  padding: 6px;
+  margin-bottom: 8px;
 }
-.card-thumb { width: 100%; max-height: 180px; object-fit: contain; border-radius: 10px; }
+.card-thumb { width: 100%; max-height: 170px; object-fit: contain; border-radius: 10px; }
 .card-item .stButton > button {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
@@ -228,9 +228,9 @@ div[data-testid="stSelectbox"] > div {
   color: var(--text);
   min-width: 44px;
 }
-.card-item .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
-.card-item .meta { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
-.card-item .rarity { margin-top: 6px; }
+.card-item .name { font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; }
+.card-item .meta { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+.card-item .rarity { margin-top: 4px; }
 .card-item .card-img img { width: 100%; height: auto; }
 .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--stroke); font-size: 0.75rem; color: var(--muted); }
 .value { font-weight: 700; font-size: 1.15rem; }
