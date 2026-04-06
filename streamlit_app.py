@@ -220,13 +220,13 @@ div[data-testid="stSelectbox"] > div {
 }
 .card-thumb { width: 100%; max-height: 170px; object-fit: contain; border-radius: 10px; }
 .card-item .stButton > button {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  border-radius: 10px;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.78rem;
+  border-radius: 8px;
   background: #141420;
   border: 1px solid #26263a;
   color: var(--text);
-  min-width: 44px;
+  min-width: 36px;
 }
 .card-item .name { font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; }
 .card-item .meta { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
@@ -607,8 +607,24 @@ def collection_view(user):
                     f"<div class='meta'>{variant} • <span class='value'>{str(count).zfill(2)}</span></div>",
                     unsafe_allow_html=True,
                 )
-                if st.button("Öppna", key=f"info-{card['id']}-{variant}", use_container_width=True):
-                    st.session_state["open_card"] = {**card, "variant": variant, "count": count}
+                action_cols = st.columns(3)
+                with action_cols[0]:
+                    if st.button("Info", key=f"info-{card['id']}-{variant}"):
+                        st.session_state["open_card"] = {**card, "variant": variant, "count": count}
+                with action_cols[1]:
+                    if st.button("−", key=f"rem-{card['id']}-{variant}"):
+                        if not remove_instance(engine, user["id"], card["id"], variant):
+                            st.warning("Kortet är låst eller saknas.")
+                        cached_cards.clear()
+                        cached_progress.clear()
+                        st.rerun()
+                with action_cols[2]:
+                    if st.button("+", key=f"add-{card['id']}-{variant}"):
+                        if not add_instance(engine, user["id"], card["id"], variant, "Near Mint", 0.0):
+                            st.warning("Den varianten finns inte.")
+                        cached_cards.clear()
+                        cached_progress.clear()
+                        st.rerun()
                 st.markdown("</div>", unsafe_allow_html=True)
     if total_cards > len(cards):
         if st.button("Visa fler kort"):
