@@ -1,4 +1,5 @@
 from sqlalchemy import text
+from lib.auth import log_event
 
 
 def get_user_by_username(engine, username: str):
@@ -55,6 +56,7 @@ def add_furniture(engine, owner_id: str, type_label: str, x_pos: float, y_pos: f
             ),
             {"oid": owner_id, "t": type_label, "x": x_pos, "y": y_pos, "r": rotation},
         )
+    log_event(engine, owner_id, "room_add_furniture", f"type={type_label}")
 
 
 def remove_furniture(engine, owner_id: str, furniture_id: str):
@@ -63,6 +65,7 @@ def remove_furniture(engine, owner_id: str, furniture_id: str):
             text("DELETE FROM room_furniture WHERE id=:id AND owner_id=:oid"),
             {"id": furniture_id, "oid": owner_id},
         )
+    log_event(engine, owner_id, "room_remove_furniture", f"id={furniture_id}")
 
 
 def get_available_items(engine, owner_id: str):
@@ -111,6 +114,7 @@ def place_item(engine, owner_id: str, item_id: str, slot_type: str, x_pos: float
             ),
             {"oid": owner_id, "iid": item_id, "s": slot_type, "fid": furniture_id, "x": x_pos, "y": y_pos, "r": rotation},
         )
+    log_event(engine, owner_id, "room_place_card", f"item={item_id}")
     return True
 
 

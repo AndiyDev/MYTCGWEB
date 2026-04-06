@@ -2,6 +2,7 @@ import uuid
 from datetime import date
 
 from sqlalchemy import text
+from lib.auth import log_event
 
 
 def list_sealed_products(engine, game: str):
@@ -65,6 +66,7 @@ def add_sealed_instance(engine, owner_id: str, sealed_product_id: str, purchase_
                 "notes": notes,
             },
         )
+    log_event(engine, owner_id, "sealed_added", f"product={sealed_product_id}")
 
 
 def list_user_sealed(engine, owner_id: str):
@@ -166,6 +168,7 @@ def open_booster(engine, owner_id: str, sealed_instance_id: str, card_numbers: l
             {"id": sealed_instance_id},
         )
 
+    log_event(engine, owner_id, "booster_opened", f"sealed_instance={sealed_instance_id}")
     return "ok", opening_id
 
 

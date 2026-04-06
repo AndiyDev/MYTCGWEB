@@ -1,5 +1,6 @@
 import uuid
 from sqlalchemy import text
+from lib.auth import log_event
 
 
 def list_listings(engine):
@@ -55,6 +56,7 @@ def create_listing(engine, seller_id: str, item_id: str, price: float, currency:
             text("UPDATE card_instances SET locked_by_listing_id = :lid WHERE id=:id"),
             {"id": item_id, "lid": listing_id},
         )
+    log_event(engine, seller_id, "listing_created", f"listing={listing_id}")
     return None
 
 
@@ -68,6 +70,7 @@ def close_listing(engine, listing_id: str, seller_id: str):
             return False
         conn.execute(text("UPDATE listings SET status='ARCHIVED' WHERE id=:id"), {"id": listing_id})
         conn.execute(text("UPDATE card_instances SET locked_by_listing_id=NULL WHERE id=:iid"), {"iid": row["item_id"]})
+    log_event(engine, seller_id, "listing_closed", f"listing={listing_id}")
     return True
 
 
@@ -83,6 +86,7 @@ def create_interest(engine, listing_id: str, buyer_id: str):
             text("INSERT INTO interests (id, listing_id, buyer_id, status) VALUES (UUID(), :l, :b, 'PENDING')"),
             {"l": listing_id, "b": buyer_id},
         )
+    log_event(engine, buyer_id, "interest_created", f"listing={listing_id}")
 
 
 def list_interests_for_seller(engine, seller_id: str):
@@ -132,6 +136,7 @@ def update_interest(engine, interest_id: str, seller_id: str, status: str):
                 ),
                 {"b": row["buyer_id"], "s": seller_id, "item": row["item_id"]},
             )
+            log_event(engine, seller_id, "interest_accepted", f"interest={interest_id}")
     return status
 
 
@@ -168,4 +173,5 @@ def update_transaction(engine, tx_id: str, user_id: str, status: str):
         if status == "COMPLETED":
             conn.execute(text("UPDATE card_instances SET owner_id=:b, locked_by_listing_id=NULL WHERE id=:item"), {"b": row["buyer_id"], "item": row["item_id"]})
             conn.execute(text("UPDATE listings SET status='SOLD' WHERE item_id=:item"), {"item": row["item_id"]})
+            log_event(engine, user_id, "transaction_completed", f"tx={tx_id}")
     return True

@@ -1,5 +1,6 @@
 import uuid
 from sqlalchemy import text
+from lib.auth import log_event
 
 
 def list_groups(engine):
@@ -23,6 +24,7 @@ def create_group(engine, name: str, description: str | None):
             text("INSERT INTO groups (id, name, description) VALUES (UUID(), :n, :d)"),
             {"n": name, "d": description},
         )
+    log_event(engine, None, "group_created", f"name={name}")
 
 
 def join_group(engine, group_id: str, user_id: str):
@@ -37,6 +39,7 @@ def join_group(engine, group_id: str, user_id: str):
             text("INSERT INTO group_members (id, group_id, user_id, role) VALUES (UUID(), :g, :u, 'MEMBER')"),
             {"g": group_id, "u": user_id},
         )
+    log_event(engine, user_id, "group_joined", f"group={group_id}")
 
 
 def is_member(engine, group_id: str, user_id: str):
@@ -113,6 +116,7 @@ def create_post(engine, group_id: str, author_id: str, category: str, content: s
                 text("UPDATE card_instances SET locked_by_post_id = :pid WHERE id=:id"),
                 {"id": offered_item_id, "pid": post_id},
             )
+    log_event(engine, author_id, "group_post_created", f"group={group_id}")
     return None
 
 
@@ -129,4 +133,5 @@ def delete_post(engine, post_id: str, user_id: str):
             {"pid": post_id},
         )
         conn.execute(text("DELETE FROM group_posts WHERE id=:id"), {"id": post_id})
+    log_event(engine, user_id, "group_post_deleted", f"post={post_id}")
     return True
