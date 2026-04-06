@@ -218,6 +218,12 @@ div[data-testid="stSelectbox"] > div {
   padding: 8px;
   margin-bottom: 10px;
 }
+.card-thumb { width: 100%; max-height: 180px; object-fit: contain; border-radius: 10px; }
+.card-item .stButton > button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 10px;
+}
 .card-item .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
 .card-item .meta { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
 .card-item .rarity { margin-top: 6px; }
@@ -462,13 +468,11 @@ def render_set_tile(set_row, owned: int, total: int):
 
 
 def render_card_image(url: str, dim: bool):
-    if dim:
-        st.markdown(
-            f"<img src='{url}' style='width:100%; opacity:0.4; border-radius:10px;'/>",
-            unsafe_allow_html=True,
-        )
-    else:
-        st.image(url, use_column_width=True)
+    opacity = "0.4" if dim else "1"
+    st.markdown(
+        f"<img src='{url}' class='card-thumb' style='opacity:{opacity};'/>",
+        unsafe_allow_html=True,
+    )
 
 
 def collection_view(user):
