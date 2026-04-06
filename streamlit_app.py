@@ -75,65 +75,145 @@ st.markdown(
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg: #0a0a0f;
-  --panel: #14141b;
-  --panel-2: #101018;
-  --stroke: #2b2b36;
-  --accent: #6df2d7;
-  --accent-2: #56a2ff;
-  --text: #e7e9ee;
-  --muted: #9aa0a6;
+  --bg: #0a0a0d;
+  --panel: #13131a;
+  --panel-2: #0f0f15;
+  --panel-3: #0d0d12;
+  --stroke: #222230;
+  --accent: #62f2d2;
+  --accent-2: #3cc2ff;
+  --accent-3: #ffb347;
+  --text: #eef0f4;
+  --muted: #9aa0ad;
+  --glow: 0 16px 40px rgba(0,0,0,0.35);
 }
 
 html, body, [class*="css"]  { font-family: 'Space Grotesk', sans-serif; }
 body {
   background:
-    radial-gradient(900px 420px at 10% -10%, #1b1b28 0%, #0a0a0f 60%),
-    radial-gradient(900px 420px at 110% 0%, #10223a 0%, #0a0a0f 55%);
+    radial-gradient(900px 420px at 10% -10%, #1b1b28 0%, #0a0a0d 60%),
+    radial-gradient(900px 480px at 110% 0%, #0b243c 0%, #0a0a0d 60%),
+    radial-gradient(600px 260px at 50% 120%, #141421 0%, #0a0a0d 65%);
   color: var(--text);
 }
-section[data-testid="stSidebar"] { background: #12121a; border-right: 1px solid var(--stroke); }
-section[data-testid="stSidebar"] .stRadio > div { gap: 0.35rem; }
+
+section[data-testid="stSidebar"] {
+  background: rgba(12, 12, 18, 0.95);
+  border-right: 1px solid var(--stroke);
+}
+section[data-testid="stSidebar"] .stRadio > div { gap: 0.5rem; }
 section[data-testid="stSidebar"] label { color: var(--text) !important; }
 section[data-testid="stSidebar"] .stButton > button { width: 100%; }
-section[data-testid="stSidebar"] .sidebar-card { background: #171725; border: 1px solid var(--stroke); padding: 12px; border-radius: 14px; }
-section[data-testid="stSidebar"] .sidebar-title { font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-section[data-testid="stSidebar"] .sidebar-brand { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.04em; margin-bottom: 10px; }
-section[data-testid="stSidebar"] .sidebar-user { display:flex; align-items:center; gap:10px; }
-section[data-testid="stSidebar"] .avatar { width: 36px; height: 36px; border-radius: 999px; background: #1f2230; border: 1px solid #2b2f3d; display:flex; align-items:center; justify-content:center; color: #7ef6da; font-weight:700; }
-section[data-testid="stSidebar"] div[role="radiogroup"] > label { padding: 8px; border-radius: 12px; background: #14141f; border: 1px solid transparent; }
+section[data-testid="stSidebar"] .sidebar-card {
+  background: linear-gradient(180deg, rgba(20,20,28,0.95), rgba(12,12,18,0.95));
+  border: 1px solid #1f1f2b;
+  padding: 14px;
+  border-radius: 16px;
+  box-shadow: var(--glow);
+}
+section[data-testid="stSidebar"] .sidebar-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+section[data-testid="stSidebar"] .sidebar-brand {
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  background: linear-gradient(90deg, #ffffff, #7ef6da);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+section[data-testid="stSidebar"] .sidebar-user { display:flex; align-items:center; gap:12px; }
+section[data-testid="stSidebar"] .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #161822;
+  border: 1px solid #2a2c3a;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color: #7ef6da;
+  font-weight:700;
+}
+section[data-testid="stSidebar"] div[role="radiogroup"] > label {
+  padding: 9px 10px;
+  border-radius: 14px;
+  background: #101018;
+  border: 1px solid #1d1d2a;
+  transition: all 0.2s ease;
+}
 section[data-testid="stSidebar"] div[role="radiogroup"] > label > div { padding-left: 0; }
 section[data-testid="stSidebar"] div[role="radiogroup"] > label input { display: none; }
-section[data-testid="stSidebar"] div[role="radiogroup"] > label input:checked + div { background: #1b1b2a; border-radius: 10px; padding: 8px 10px; border: 1px solid #2e2e3d; color: #ffffff; }
-section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover { border-color: #2a2a3a; }
+section[data-testid="stSidebar"] div[role="radiogroup"] > label input:checked + div {
+  background: linear-gradient(90deg, rgba(98,242,210,0.22), rgba(60,194,255,0.12));
+  border-radius: 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(98,242,210,0.35);
+  color: #ffffff;
+}
+section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+  border-color: rgba(98,242,210,0.4);
+  transform: translateY(-1px);
+}
 
-div[data-testid="stVerticalBlock"] { gap: 1rem; }
+div[data-testid="stVerticalBlock"] { gap: 1.2rem; }
 
-.card { background: var(--panel); border: 1px solid var(--stroke); padding: 14px; border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.3); }
+.card { background: var(--panel); border: 1px solid var(--stroke); padding: 16px; border-radius: 16px; box-shadow: var(--glow); }
 .section-title { font-size: 22px; font-weight: 700; margin: 10px 0; }
 
 .stButton > button {
-  border-radius: 10px; border: 1px solid var(--stroke);
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
   background: linear-gradient(180deg, #1a1a26 0%, #12121a 100%);
-  color: var(--text); padding: 0.6rem 0.9rem;
+  color: var(--text);
+  padding: 0.6rem 0.9rem;
 }
 .stButton > button:hover { border-color: #3a3a48; background: #1f1f2b; }
 .stButton > button:focus { box-shadow: 0 0 0 2px rgba(109,242,215,0.25); }
+button[kind="primary"] {
+  background: linear-gradient(90deg, rgba(98,242,210,0.35), rgba(60,194,255,0.25));
+  border: 1px solid rgba(98,242,210,0.4);
+  color: #ffffff;
+}
+button[kind="primary"]:hover { border-color: rgba(98,242,210,0.6); }
 input, textarea, select { border-radius: 10px !important; }
+div[data-testid="stTextInput"] input {
+  background: #0f1016;
+  border: 1px solid #242433;
+  color: var(--text);
+  padding: 0.6rem 0.75rem;
+  border-radius: 12px;
+}
+div[data-testid="stTextInput"] input:focus {
+  border-color: rgba(98,242,210,0.6);
+  box-shadow: 0 0 0 2px rgba(98,242,210,0.2);
+}
+div[data-testid="stSelectbox"] > div {
+  background: #0f1016;
+  border-radius: 12px;
+  border: 1px solid #242433;
+}
 
 .muted { color: var(--muted); }
 
-.collection-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 16px; }
+.collection-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(210px,1fr)); gap: 16px; }
 .card-item {
-  background: var(--panel-2);
-  border: 1px solid var(--stroke);
-  border-radius: 16px;
+  background: linear-gradient(180deg, #12121a 0%, #0d0d14 100%);
+  border: 1px solid #1f1f2d;
+  border-radius: 18px;
   padding: 12px;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+  transition: transform 0.2s ease, border 0.2s ease;
 }
+.card-item:hover { transform: translateY(-2px); border-color: rgba(98,242,210,0.25); }
 .card-item .card-img {
-  background: #0d0d12;
-  border: 1px solid #232332;
+  background: #0b0b10;
+  border: 1px solid #1f1f2d;
   border-radius: 14px;
   padding: 8px;
   margin-bottom: 10px;
@@ -168,6 +248,43 @@ input, textarea, select { border-radius: 10px !important; }
 .pack-title { font-size: 0.85rem; color: var(--muted); }
 .animate-card { animation: flyout 0.6s ease forwards; }
 @keyframes flyout { from { transform: translateY(-10px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+.set-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 18px; }
+.set-tile {
+  background: linear-gradient(180deg, #13131b 0%, #0d0d14 100%);
+  border: 1px solid #1f1f2d;
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: var(--glow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 180px;
+}
+.set-media {
+  background: #0b0b10;
+  border: 1px solid #1f1f2d;
+  border-radius: 14px;
+  padding: 10px;
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.set-media img { max-height: 90px; object-fit: contain; }
+.set-meta { display: flex; justify-content: space-between; align-items: center; }
+.set-name { font-weight: 600; font-size: 0.95rem; }
+.set-progress { color: var(--muted); font-size: 0.85rem; }
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.top-title { font-size: 1.6rem; font-weight: 700; }
+.top-sub { color: var(--muted); font-size: 0.9rem; }
 
 .room-wrap { perspective: 900px; background: #0b0b10; padding: 20px; border-radius: 18px; border: 1px solid #1f1f2a; }
 .room { position: relative; height: 360px; background: #0f1016; border-radius: 14px; overflow: hidden; }
@@ -210,6 +327,11 @@ def cached_cards(set_id: str):
 @st.cache_data(ttl=20, show_spinner=False)
 def cached_progress(user_id: str, game: str):
     return get_set_progress(engine, user_id, game)
+
+
+@st.cache_data(ttl=20, show_spinner=False)
+def cached_variant_counts(user_id: str, set_id: str):
+    return get_user_variant_counts(engine, user_id, set_id)
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -260,13 +382,26 @@ def login_view():
 def render_set_tile(set_row, owned: int, total: int):
     logo = set_row.get("logo_path") or ""
     symbol = set_row.get("symbol_path") or ""
+    logo_html = ""
+    symbol_html = ""
     if logo and (logo.startswith("http") or os.path.exists(logo)):
-        st.image(logo, use_column_width=True)
-    else:
-        st.markdown(f"**{set_row['set_name']}**")
+        logo_html = f"<img src='{logo}' alt='{set_row['set_name']}'/>"
     if symbol and (symbol.startswith("http") or os.path.exists(symbol)):
-        st.image(symbol, width=32)
-    st.caption(f"{str(owned).zfill(3)}/{str(total).zfill(3)}")
+        symbol_html = f"<img src='{symbol}' alt='symbol' style='height:24px;'/>"
+
+    st.markdown(
+        f"""
+        <div class='set-tile'>
+          <div class='set-media'>{logo_html or set_row['set_name']}</div>
+          <div class='set-meta'>
+            <div class='set-name'>{set_row['set_name']}</div>
+            <div class='set-progress'>{str(owned).zfill(3)}/{str(total).zfill(3)}</div>
+          </div>
+          <div>{symbol_html}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_card_image(url: str, dim: bool):
@@ -280,13 +415,6 @@ def render_card_image(url: str, dim: bool):
 
 
 def collection_view(user):
-    st.markdown("## Samling")
-    sets_count, cards_count = get_db_counts(engine)
-    st.caption(f"Databas: {sets_count} set • {cards_count} kort")
-    if st.button("Uppdatera cache"):
-        cached_sets.clear()
-        cached_cards.clear()
-        cached_progress.clear()
     game = st.radio("Välj TCG", ["pokemon"], horizontal=True)
     sets = cached_sets(game)
 
@@ -299,24 +427,43 @@ def collection_view(user):
 
     selected_set_id = st.session_state.get("selected_set_id")
     if selected_set_id:
-        if st.button("Tillbaka till set"):
-            st.session_state.pop("selected_set_id")
-            st.rerun()
+        top = st.columns([1, 2.5, 2])
+        with top[0]:
+            if st.button("Tillbaka"):
+                st.session_state.pop("selected_set_id")
+                st.session_state.pop("card_page", None)
+                st.rerun()
+        selected_set = set_map.get(selected_set_id, {})
+        with top[1]:
+            st.markdown(f"## {selected_set.get('set_name','Set')}")
+        with top[2]:
+            search = st.text_input("Sök kort", placeholder="Charizard, 025, Pikachu...", label_visibility="collapsed")
     else:
-        set_search = st.text_input("Sök set")
+        top = st.columns([2, 2.5, 1.2])
+        sets_count, cards_count = get_db_counts(engine)
+        with top[0]:
+            st.markdown("## Samling")
+            st.caption(f"Databas: {sets_count} set • {cards_count} kort")
+        with top[1]:
+            set_search = st.text_input("Sök set", placeholder="Skriv setnamn...", label_visibility="collapsed")
+        with top[2]:
+            if st.button("Uppdatera cache"):
+                cached_sets.clear()
+                cached_cards.clear()
+                cached_progress.clear()
+                st.rerun()
         if set_search:
             needle = set_search.strip().lower()
             sets = [s for s in sets if needle in s["set_name"].lower()]
 
-        page_size = 40
+        page_size = 36
         page = st.session_state.get("set_page", 1)
         visible = sets[: page * page_size]
         set_cols = st.columns(4)
         for idx, s in enumerate(visible):
             with set_cols[idx % 4]:
-                clicked = st.button(s["set_name"], use_container_width=True)
                 render_set_tile(s, progress.get(s["id"], 0), s["total_cards"])
-                if clicked:
+                if st.button("Öppna set", key=f"open-set-{s['id']}", use_container_width=True, type="primary"):
                     st.session_state["selected_set_id"] = s["id"]
                     st.rerun()
         if len(sets) > len(visible):
@@ -327,11 +474,16 @@ def collection_view(user):
 
     cards = cached_cards(selected_set_id)
     cards = sorted(cards, key=lambda c: int(c["card_number"]) if str(c["card_number"]).isdigit() else 999999)
-    counts = get_user_variant_counts(engine, user["id"], selected_set_id)
+    counts = cached_variant_counts(user["id"], selected_set_id)
 
-    st.markdown("### Kort i set")
     selected_set = set_map.get(selected_set_id, {})
-    search = st.text_input("Sök kort (namn eller nummer)")
+    if selected_set.get("logo_path"):
+        st.image(selected_set["logo_path"], width=260)
+    owned_count = progress.get(selected_set_id, 0)
+    total_count = selected_set.get("total_cards", 0)
+    if total_count:
+        st.caption(f"{owned_count}/{total_count} kort i setet")
+        st.progress(min(owned_count / max(total_count, 1), 1.0))
     filter_variants = st.multiselect("Filter", ["Normal", "Holofoil", "Reverse Holo"], default=["Normal", "Holofoil", "Reverse Holo"])
     if search:
         needle = search.strip().lower()
@@ -342,6 +494,11 @@ def collection_view(user):
     if not cards:
         empty_state("Inga kort i detta set ännu.")
         return
+
+    page_size = 60
+    card_page = st.session_state.get("card_page", 1)
+    total_cards = len(cards)
+    cards = cards[: card_page * page_size]
 
     st.markdown("<div class='collection-grid'>", unsafe_allow_html=True)
     for i, card in enumerate(cards):
@@ -388,6 +545,10 @@ def collection_view(user):
                         st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+    if total_cards > len(cards):
+        if st.button("Visa fler kort"):
+            st.session_state["card_page"] = card_page + 1
+            st.rerun()
 
     if st.session_state.get("open_card"):
         card = st.session_state["open_card"]
@@ -1052,16 +1213,7 @@ def main():
         pages = ["Samling", "Sealed", "Marknad", "Social Hubb", "Mitt Rum", "Budget"]
         if require_admin(user):
             pages.append("Admin")
-        icons = {
-            "Samling": "🗂",
-            "Sealed": "📦",
-            "Marknad": "🏷",
-            "Social Hubb": "💬",
-            "Mitt Rum": "🏠",
-            "Budget": "📊",
-            "Admin": "🛠",
-        }
-        page = st.radio("Navigering", [f"{icons[p]} {p}" for p in pages])
+        page = st.radio("Navigering", pages, label_visibility="collapsed")
         st.markdown("</div>", unsafe_allow_html=True)
 
     page_label = page.split(" ", 1)[1] if " " in page else page
