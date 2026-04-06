@@ -569,8 +569,8 @@ def collection_view(user):
     total_cards = len(cards)
     cards = cards[: card_page * page_size]
 
-    st.markdown("<div class='collection-grid'>", unsafe_allow_html=True)
-    for i, card in enumerate(cards):
+    row = []
+    for card in cards:
         variants = []
         if card["has_normal"]:
             variants.append("Normal")
@@ -578,42 +578,50 @@ def collection_view(user):
             variants.append("Holofoil")
         if card["has_reverse_holo"]:
             variants.append("Reverse Holo")
-
         for variant in variants:
+            row.append((card, variant))
+
+    for i in range(0, len(row), 3):
+        cols = st.columns(3)
+        for j in range(3):
+            idx = i + j
+            if idx >= len(row):
+                continue
+            card, variant = row[idx]
             count = counts.get(card["id"], {}).get(variant, 0)
             dim = count == 0
-            st.markdown("<div class='card-item'>", unsafe_allow_html=True)
-            st.markdown(f"<div class='name'>#{card['card_number']} {card['name']}</div>", unsafe_allow_html=True)
-            if card.get("rarity"):
-                st.markdown(f"<div class='rarity badge'>{card['rarity']}</div>", unsafe_allow_html=True)
-            if card["image_url"]:
-                st.markdown("<div class='card-img'>", unsafe_allow_html=True)
-                render_card_image(card["image_url"], dim)
-                st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown(
-                f"<div class='meta'>{selected_set.get('set_name','')} • {variant} • <span class='value'>{str(count).zfill(2)}</span></div>",
-                unsafe_allow_html=True,
-            )
-            cols = st.columns(3)
-            with cols[0]:
-                if st.button("Info", key=f"info-{card['id']}-{variant}"):
-                    st.session_state["open_card"] = {**card, "variant": variant, "count": count}
-            with cols[1]:
-                if st.button("-", key=f"rem-{card['id']}-{variant}"):
-                    if not remove_instance(engine, user["id"], card["id"], variant):
-                        st.warning("Kortet är låst eller saknas.")
-                    cached_cards.clear()
-                    cached_progress.clear()
-                    st.rerun()
-            with cols[2]:
+            with cols[j]:
+                st.markdown("<div class='card-item'>", unsafe_allow_html=True)
+                st.markdown(f"<div class='name'>#{card['card_number']} {card['name']}</div>", unsafe_allow_html=True)
+                if card.get("rarity"):
+                    st.markdown(f"<div class='rarity badge'>{card['rarity']}</div>", unsafe_allow_html=True)
+                if card["image_url"]:
+                    st.markdown("<div class='card-img'>", unsafe_allow_html=True)
+                    render_card_image(card["image_url"], dim)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<div class='meta'>{variant} • <span class='value'>{str(count).zfill(2)}</span></div>",
+                    unsafe_allow_html=True,
+                )
+                action_cols = st.columns(3)
+                with action_cols[0]:
+                    if st.button("Info", key=f"info-{card['id']}-{variant}"):
+                        st.session_state["open_card"] = {**card, "variant": variant, "count": count}
+                with action_cols[1]:
+                    if st.button("-", key=f"rem-{card['id']}-{variant}"):
+                        if not remove_instance(engine, user["id"], card["id"], variant):
+                            st.warning("Kortet är låst eller saknas.")
+                        cached_cards.clear()
+                        cached_progress.clear()
+                        st.rerun()
+                with action_cols[2]:
                     if st.button("+", key=f"add-{card['id']}-{variant}"):
                         if not add_instance(engine, user["id"], card["id"], variant, "Near Mint", 0.0):
                             st.warning("Den varianten finns inte.")
                         cached_cards.clear()
                         cached_progress.clear()
                         st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
     if total_cards > len(cards):
         if st.button("Visa fler kort"):
             st.session_state["card_page"] = card_page + 1
