@@ -10,6 +10,13 @@ def get_sets(engine, game: str):
     return rows
 
 
+def get_db_counts(engine):
+    with engine.begin() as conn:
+        sets = conn.execute(text("SELECT COUNT(*) FROM tcg_sets")).scalar() or 0
+        cards = conn.execute(text("SELECT COUNT(*) FROM tcg_cards")).scalar() or 0
+    return int(sets), int(cards)
+
+
 def get_set_progress(engine, user_id: str, game: str):
     with engine.begin() as conn:
         rows = conn.execute(

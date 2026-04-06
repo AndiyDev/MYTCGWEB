@@ -12,6 +12,7 @@ from lib.collection import (
     remove_instance,
     get_set_progress,
     update_purchase_price,
+    get_db_counts,
 )
 from lib.pokemon_import import fetch_pokemon_card
 from lib.pokemon_api import fetch_sets, fetch_cards_page
@@ -279,6 +280,12 @@ def render_card_image(url: str, dim: bool):
 
 def collection_view(user):
     st.markdown("## Samling")
+    sets_count, cards_count = get_db_counts(engine)
+    st.caption(f"Databas: {sets_count} set • {cards_count} kort")
+    if st.button("Uppdatera cache"):
+        cached_sets.clear()
+        cached_cards.clear()
+        cached_progress.clear()
     game = st.radio("Välj TCG", ["pokemon"], horizontal=True)
     sets = cached_sets(game)
 
