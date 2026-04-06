@@ -30,7 +30,7 @@ from lib.sealed import (
     get_cards_by_numbers,
 )
 from lib.sealed_scrape import scrape_featured_products
-from lib.security import rate_limit
+from lib.security import rate_limit, clean_text
 from lib.room import (
     get_room_items,
     get_available_items,
@@ -236,7 +236,7 @@ def login_view():
             if not rate_limit("rl_register", 3, 300):
                 st.error("För många kontoförsök. Vänta en stund.")
                 return
-            user_id, error = register_user(engine, new_username, new_password, display_name or None)
+            user_id, error = register_user(engine, new_username, new_password, clean_text(display_name, 64) or None)
             if error == "exists":
                 st.error("Användarnamnet är upptaget")
             elif error == "invalid_username":
@@ -415,7 +415,7 @@ def collection_view(user):
                     return
                 st.session_state["price_results"] = {}
                 for src in sources:
-                    result = cached_price(src, query)
+                    result = cached_price(src, clean_text(query, 120))
                     st.session_state["price_results"][src] = result
 
             results = st.session_state.get("price_results", {})
@@ -622,7 +622,7 @@ def groups_view(user):
         name = st.text_input("Gruppnamn")
         desc = st.text_input("Beskrivning")
         if st.button("Skapa") and name:
-            create_group(engine, name, desc or None)
+            create_group(engine, clean_text(name, 80), clean_text(desc or "", 200) or None)
             st.rerun()
 
     with right:
@@ -671,7 +671,7 @@ def groups_view(user):
                     requested_card_id = st.text_input("Requested card id", key=f"req-{tab.label}")
 
                 if st.button("Publicera", key=f"post-{tab.label}"):
-                    err = create_post(engine, group_id, user["id"], category, content, trade_type, offered_item_id, requested_card_id)
+                    err = create_post(engine, group_id, user["id"], category, clean_text(content, 800), trade_type, offered_item_id, requested_card_id)
                     if err == "not_owner":
                         st.error("Du äger inte kortet")
                     elif err == "not_verified":
@@ -710,7 +710,7 @@ def sealed_view(user):
         pdate = st.date_input("Köpdatum", value=None)
         notes = st.text_area("Anteckningar")
         if st.button("Lägg till") and prod != "--":
-            add_sealed_instance(engine, user["id"], options[prod], price, pdate, notes or None)
+            add_sealed_instance(engine, user["id"], options[prod], price, pdate, clean_text(notes or "", 300) or None)
             st.success("Tillagd")
 
         st.divider()
