@@ -72,28 +72,28 @@ ensure_schema()
 st.markdown(
     """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg: #0a0a0d;
-  --panel: #13131a;
-  --panel-2: #0f0f15;
-  --panel-3: #0d0d12;
-  --stroke: #20202b;
-  --accent: #62f2d2;
-  --accent-2: #3cc2ff;
-  --accent-3: #ffb347;
-  --text: #eef0f4;
-  --muted: #9aa0ad;
-  --glow: 0 16px 40px rgba(0,0,0,0.35);
+  --bg: #0a0b0f;
+  --panel: #12131a;
+  --panel-2: #0e0f15;
+  --panel-3: #0b0c11;
+  --stroke: #1e1f2b;
+  --accent: #63f2d6;
+  --accent-2: #4cc3ff;
+  --accent-3: #ffb761;
+  --text: #f0f2f6;
+  --muted: #9aa2b1;
+  --glow: 0 18px 44px rgba(0,0,0,0.35);
 }
 
-html, body, [class*="css"]  { font-family: 'Space Grotesk', sans-serif; }
+html, body, [class*="css"]  { font-family: 'Manrope', sans-serif; }
 body {
   background:
-    radial-gradient(900px 420px at 10% -10%, #1b1b28 0%, #0a0a0d 60%),
-    radial-gradient(900px 480px at 110% 0%, #0b243c 0%, #0a0a0d 60%),
-    radial-gradient(600px 260px at 50% 120%, #141421 0%, #0a0a0d 65%);
+    radial-gradient(900px 420px at 10% -10%, #1c1d2a 0%, #0a0b0f 60%),
+    radial-gradient(900px 480px at 110% 0%, #0b243c 0%, #0a0b0f 60%),
+    radial-gradient(600px 260px at 50% 120%, #141623 0%, #0a0b0f 65%);
   color: var(--text);
 }
 
@@ -105,11 +105,11 @@ section[data-testid="stSidebar"] .stRadio > div { gap: 0.5rem; }
 section[data-testid="stSidebar"] label { color: var(--text) !important; }
 section[data-testid="stSidebar"] .stButton > button { width: 100%; }
 section[data-testid="stSidebar"] .sidebar-card {
-  background: linear-gradient(180deg, rgba(20,20,28,0.95), rgba(12,12,18,0.95));
-  border: 1px solid #1f1f2b;
-  padding: 14px;
-  border-radius: 16px;
-  box-shadow: var(--glow);
+  background: rgba(15,16,22,0.9);
+  border: 1px solid #1c1d29;
+  padding: 12px;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.3);
 }
 section[data-testid="stSidebar"] .sidebar-title {
   font-size: 0.75rem;
@@ -141,10 +141,10 @@ section[data-testid="stSidebar"] .avatar {
   font-weight:700;
 }
 section[data-testid="stSidebar"] div[role="radiogroup"] > label {
-  padding: 9px 10px;
-  border-radius: 14px;
-  background: #101018;
-  border: 1px solid #1d1d2a;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #10121a;
+  border: 1px solid #1d1f2b;
   transition: all 0.2s ease;
 }
 section[data-testid="stSidebar"] div[role="radiogroup"] > label > div { padding-left: 0; }
@@ -205,7 +205,7 @@ div[data-testid="stSelectbox"] > div {
 .card-item {
   background: #0f1016;
   border: 1px solid #1c1c28;
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 10px;
   box-shadow: 0 10px 24px rgba(0,0,0,0.28);
   transition: transform 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
@@ -214,7 +214,7 @@ div[data-testid="stSelectbox"] > div {
 .card-item .card-img {
   background: #0b0b10;
   border: 1px solid #1a1a26;
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 6px;
   margin-bottom: 8px;
 }
@@ -228,11 +228,11 @@ div[data-testid="stSelectbox"] > div {
   color: var(--text);
   min-width: 36px;
 }
-.card-item .name { font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; }
-.card-item .meta { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+.card-item .name { font-weight: 600; font-size: 0.82rem; margin-bottom: 4px; }
+.card-item .meta { color: var(--muted); font-size: 0.76rem; margin-top: 4px; }
 .card-item .rarity { margin-top: 4px; }
 .card-item .card-img img { width: 100%; height: auto; }
-.badge { display: inline-block; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--stroke); font-size: 0.75rem; color: var(--muted); }
+.badge { display: inline-block; padding: 3px 8px; border-radius: 999px; border: 1px solid #262636; font-size: 0.7rem; color: var(--muted); background: #10121a; }
 .value { font-weight: 700; font-size: 1.15rem; }
 
 .detail-card { background: #111118; border: 1px solid var(--stroke); border-radius: 18px; padding: 16px; }
@@ -531,7 +531,6 @@ def collection_view(user):
         return
 
     cards = cached_cards(selected_set_id)
-    cards = sorted(cards, key=lambda c: int(c["card_number"]) if str(c["card_number"]).isdigit() else 999999)
     counts = cached_variant_counts(user["id"], selected_set_id)
 
     selected_set = set_map.get(selected_set_id, {})
