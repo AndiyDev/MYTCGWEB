@@ -223,6 +223,10 @@ div[data-testid="stSelectbox"] > div {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
   border-radius: 10px;
+  background: #141420;
+  border: 1px solid #26263a;
+  color: var(--text);
+  min-width: 44px;
 }
 .card-item .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
 .card-item .meta { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
