@@ -1,6 +1,7 @@
 import os
 import uuid
 import streamlit as st
+from sqlalchemy import text
 from lib.db import get_engine
 from lib.schema import init_schema
 from lib.auth import login_user, register_user, logout_user, get_current_user, require_admin
