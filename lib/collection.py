@@ -116,3 +116,25 @@ def remove_instance(engine, user_id: str, card_id: str, variant: str):
             return False
         conn.execute(text("DELETE FROM card_instances WHERE id=:id"), {"id": row["id"]})
     return True
+
+
+def update_purchase_price(engine, user_id: str, card_id: str, variant: str, price: float):
+    with engine.begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT id FROM card_instances
+                WHERE owner_id=:uid AND card_id=:cid AND variant=:v
+                ORDER BY created_at DESC
+                LIMIT 1
+                """
+            ),
+            {"uid": user_id, "cid": card_id, "v": variant},
+        ).mappings().first()
+        if not row:
+            return False
+        conn.execute(
+            text("UPDATE card_instances SET purchase_price=:p WHERE id=:id"),
+            {"p": price, "id": row["id"]},
+        )
+    return True

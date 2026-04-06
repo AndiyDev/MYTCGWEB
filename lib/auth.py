@@ -1,5 +1,6 @@
 import re
 import uuid
+from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from sqlalchemy import text
 import streamlit as st
@@ -11,6 +12,7 @@ LOCKOUT_THRESHOLD = 5
 LOCKOUT_MINUTES = 15
 USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9_.-]{3,24}$")
 MIN_PASSWORD_LEN = 8
+SESSION_TTL_MINUTES = 120
 
 
 def hash_password(password: str) -> str:
@@ -30,7 +32,15 @@ def log_event(engine, user_id: str | None, action: str, meta: str | None = None)
 
 
 def get_current_user():
-    return st.session_state.get("user")
+    user = st.session_state.get("user")
+    if not user:
+        return None
+    last_seen = st.session_state.get("last_seen_at")
+    if last_seen and datetime.utcnow() - last_seen > timedelta(minutes=SESSION_TTL_MINUTES):
+        st.session_state.pop("user", None)
+        return None
+    st.session_state["last_seen_at"] = datetime.utcnow()
+    return user
 
 
 def login_user(engine, username: str, password: str):
@@ -84,6 +94,7 @@ def login_user(engine, username: str, password: str):
         "role": row["role"] or "USER",
     }
     st.session_state["user"] = user
+    st.session_state["last_seen_at"] = datetime.utcnow()
     log_event(engine, row["id"], "login_success", None)
     return user, None
 
@@ -127,3 +138,4 @@ def require_admin(user: dict | None) -> bool:
 
 def logout_user():
     st.session_state.pop("user", None)
+    st.session_state.pop("last_seen_at", None)

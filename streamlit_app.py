@@ -11,6 +11,7 @@ from lib.collection import (
     add_instance,
     remove_instance,
     get_set_progress,
+    update_purchase_price,
 )
 from lib.pokemon_import import fetch_pokemon_card
 from lib.pokemon_api import fetch_sets, fetch_cards_page
@@ -29,6 +30,7 @@ from lib.sealed import (
     get_cards_by_numbers,
 )
 from lib.sealed_scrape import scrape_featured_products
+from lib.security import rate_limit
 from lib.room import (
     get_room_items,
     get_available_items,
@@ -212,6 +214,9 @@ def login_view():
         username = st.text_input("Användarnamn")
         password = st.text_input("Lösenord", type="password")
         if st.button("Logga in", use_container_width=True):
+            if not rate_limit("rl_login", 5, 60):
+                st.error("För många försök. Vänta en stund.")
+                return
             user, error = login_user(engine, username, password)
             if error == "locked":
                 st.error("Kontot är låst. Försök igen senare.")
@@ -228,6 +233,9 @@ def login_view():
         st.caption("Användarnamn 3-24 tecken: a-z, 0-9, . _ -")
         st.caption("Lösenord minst 8 tecken")
         if st.button("Skapa konto", use_container_width=True):
+            if not rate_limit("rl_register", 3, 300):
+                st.error("För många kontoförsök. Vänta en stund.")
+                return
             user_id, error = register_user(engine, new_username, new_password, display_name or None)
             if error == "exists":
                 st.error("Användarnamnet är upptaget")
@@ -402,6 +410,9 @@ def collection_view(user):
             )
             query = st.text_input("Sökterm", value=f"{card['name']} {selected_set.get('set_name','')} {card['card_number']}")
             if st.button("Hämta pris"):
+                if not rate_limit("rl_price", 20, 60):
+                    st.error("För många prisförfrågningar. Vänta lite.")
+                    return
                 st.session_state["price_results"] = {}
                 for src in sources:
                     result = cached_price(src, query)
@@ -425,13 +436,17 @@ def collection_view(user):
             st.markdown(f"<span class='badge'>Äger {str(card['count']).zfill(2)}</span>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("#### Lägg till med pris")
+            st.markdown("#### Pris för kortet")
             paid = st.number_input("Pris du betalade (SEK)", min_value=0.0, step=1.0, key=f"paid-{card['id']}-{card['variant']}")
             if st.button("Lägg till kort med pris", key=f"addpaid-{card['id']}-{card['variant']}"):
                 if not add_instance(engine, user["id"], card["id"], card["variant"], "Near Mint", paid):
                     st.warning("Den varianten finns inte.")
                 cached_cards.clear()
                 cached_progress.clear()
+                st.rerun()
+            if st.button("Uppdatera senaste pris", key=f"upprice-{card['id']}-{card['variant']}"):
+                if not update_purchase_price(engine, user["id"], card["id"], card["variant"], paid):
+                    st.warning("Hittade inget kort att uppdatera.")
                 st.rerun()
             if st.button("Stäng"):
                 st.session_state.pop("open_card")
